@@ -7,6 +7,7 @@ from pathlib import Path
 # IMPORTAÇÃO DAS PÁGINAS
 # ==================================================
 from paginas.home import pagina_home
+from paginas.padrao_visual import aplicar_tema
 from paginas.visao_geral import pagina_visao_geral
 from paginas.prontidao import pagina_prontidao
 from paginas.pre_alerta import pagina_pre_alerta
@@ -82,6 +83,11 @@ pagina = st.sidebar.radio(
     ]
 )
 
+aplicar_tema()
+
+# ==================================================
+# EXIBIÇÃO DAS PÁGINAS
+# ==================================================
 
 # ==================================================
 # EXIBIÇÃO DAS PÁGINAS
@@ -89,47 +95,34 @@ pagina = st.sidebar.radio(
 
 if pagina == "Home":
 
-    st.title("Dashboard Operacional - Savoy")
-    st.subheader("")
-
-elif pagina == "Home":
-    pagina_home(dados)
+    pagina_home()
 
 elif pagina == "Visão Geral":
     pagina_visao_geral(dados)
 
-
 elif pagina == "Prontidão":
     pagina_prontidao(dados)
-
 
 elif pagina == "Pré-Alerta":
     pagina_pre_alerta(dados)
 
-
 elif pagina == "Trânsito Internacional":
     pagina_transito_internacional(dados)
-
 
 elif pagina == "Numerários":
     pagina_numerarios(dados)
 
-
 elif pagina == "Controle da Desova":
     pagina_controle_da_desova(dados)
-
 
 elif pagina == "Armazenagem":
     pagina_armazenagem(dados)
 
-
 elif pagina == "Gestão Aduaneira":
     pagina_gestao_aduaneira(dados)
 
-
 elif pagina == "Entrega de Carga":
     pagina_entrega_da_carga(dados)
-
 
 elif pagina == "Conclusão":
     pagina_conclusao(dados)

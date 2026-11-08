@@ -1,48 +1,61 @@
+from html import escape
+
 import pandas as pd
-import plotly.express as px
 import streamlit as st
 
-CORES_FAROL = {
-    "DENTRO DO PRAZO": "#239B56",
-    "ATENÇÃO": "#E3B51A",
-    "ALERTA": "#E67E22",
-    "ATRASO": "#C0392B",
-    "SEM DATA": "#8795A5",
-    "REVISAR REGRA": "#6C757D",
-}
+try:
+    from padrao_visual import (
+        CORES_FAROL, aviso, barra_filtros, cabecalho, cartao, faixa_farol,
+        grafico_duracao, grafico_evolucao, grafico_farol, secao, tabela_detalhada,
+        tema_ativo, titulo_card,
+    )
+except ModuleNotFoundError:  # quando as páginas são importadas como pacote (paginas.xxx)
+    from paginas.padrao_visual import (
+        CORES_FAROL, aviso, barra_filtros, cabecalho, cartao, faixa_farol,
+        grafico_duracao, grafico_evolucao, grafico_farol, secao, tabela_detalhada,
+        tema_ativo, titulo_card,
+    )
+
+REGRA_PADRAO = "Menos de 1 dia: Dentro do Prazo | 2 dias: Atenção | 3 dias: Alerta | Mais de 3 dias: Atraso"
 
 # As medições e os nomes das datas abaixo foram extraídos da página Pré-Alerta
 # do PDF de referência. Algumas colunas variam conforme a base utilizada.
+# "aba" é só o nome curto exibido na aba da página.
 MEDICOES = [
     {
+        "aba": "Disponibilidade inicial",
         "titulo": "Controle de Disponibilidade Inicial",
         "inicio": ["Data Recebimento do Pedido"],
         "fim": ["Data Previsão de Disponibilidade Carga Inicial"],
         "descricao": "Acompanhamento da previsão inicial de disponibilidade da carga.",
-        "regra": "Menos de 1 dia: Dentro do Prazo | 2 dias: Atenção | 3 dias: Alerta | Mais de 3 dias: Atraso",
+        "regra": REGRA_PADRAO,
     },
     {
+        "aba": "Confirmação de prontidão",
         "titulo": "Controle de Confirmação de Prontidão",
         "inicio": ["Data Previsão de Disponibilidade Carga Inicial"],
         "fim": ["Data Confirmação de Prontidão", "Data Confirmacao de Prontidao"],
         "descricao": "Acompanhamento da confirmação de prontidão da carga.",
-        "regra": "Menos de 1 dia: Dentro do Prazo | 2 dias: Atenção | 3 dias: Alerta | Mais de 3 dias: Atraso",
+        "regra": REGRA_PADRAO,
     },
     {
+        "aba": "Booking",
         "titulo": "Controle de Booking",
         "inicio": ["Data Disponibilidade de Carga", "Data Previsão de Disponibilidade Carga Inicial"],
         "fim": ["Data Booking", "Data Confirmação Booking", "Data Confirmacao Booking"],
         "descricao": "Acompanhamento do processo de booking.",
-        "regra": "Menos de 1 dia: Dentro do Prazo | 2 dias: Atenção | 3 dias: Alerta | Mais de 3 dias: Atraso",
+        "regra": REGRA_PADRAO,
     },
     {
+        "aba": "Cópia de documentos",
         "titulo": "Controle de Recebimento de Cópia de Documentos",
         "inicio": ["Data Disponível na Origem", "Data Disponivel na Origem"],
         "fim": ["Data Recebimento Copia de Documentos", "Data Recebimento Cópia de Documentos"],
         "descricao": "Tempo entre a disponibilização na origem e o recebimento da cópia dos documentos.",
-        "regra": "Menos de 1 dia: Dentro do Prazo | 2 dias: Atenção | 3 dias: Alerta | Mais de 3 dias: Atraso",
+        "regra": REGRA_PADRAO,
     },
     {
+        "aba": "Aprovação de documentos",
         "titulo": "Controle de Aprovação de Cópia de Documentos",
         "inicio": ["Data Recebimento Copia de Documentos", "Data Recebimento Cópia de Documentos"],
         "fim": ["Data Aprovação Copia de Documentos", "Data Aprovação Cópia de Documentos"],
@@ -50,6 +63,7 @@ MEDICOES = [
         "regra": "Faixas de prazo conforme instrução apresentada no PDF.",
     },
     {
+        "aba": "Atraso no embarque",
         "titulo": "Controle de Atraso no Embarque com Base de Prontidão",
         "inicio": ["Data Disponibilidade de Carga", "Data Previsão de Disponibilidade Carga Inicial"],
         "fim": ["Data Embarque Efetivo"],
@@ -58,35 +72,43 @@ MEDICOES = [
         "modal_especial": True,
     },
     {
+        "aba": "Data efetiva de embarque",
         "titulo": "Controle de Data Efetiva de Embarque",
         "inicio": ["Data Estimado Embarque", "Data Estimado de Embarque"],
         "fim": ["Data Efetiva Embarque", "Data Embarque Efetivo"],
         "descricao": "Compara a data estimada com a data efetiva de embarque.",
-        "regra": "Menos de 1 dia: Dentro do Prazo | 2 dias: Atenção | 3 dias: Alerta | Mais de 3 dias: Atraso",
+        "regra": REGRA_PADRAO,
     },
-    {        "titulo": "Controle de Envio de Instrução de Desembaraço",
+    {
+        "aba": "Instrução de desembaraço",
+        "titulo": "Controle de Envio de Instrução de Desembaraço",
         "inicio": ["Data Efetiva Embarque", "Data Embarque Efetivo"],
         "fim": ["Data Envio Instrução Desembaraço", "Data Envio Instrução de Desembaraço"],
         "descricao": "Acompanhamento do envio da instrução de desembaraço.",
-        "regra": "Menos de 1 dia: Dentro do Prazo | 2 dias: Atenção | 3 dias: Alerta | Mais de 3 dias: Atraso",
+        "regra": REGRA_PADRAO,
     },
     {
+        "aba": "Coleta",
         "titulo": "Controle de Coleta",
         "inicio": ["Data carga Disponível Origem", "Data Carga Disponível Origem", "Data Disponibilidade de Carga"],
         "fim": ["Data Efetiva Coleta", "Data Efetiva de Coleta"],
         "descricao": "Acompanhamento entre a disponibilidade da carga na origem e a coleta efetiva.",
-        "regra": "Menos de 1 dia: Dentro do Prazo | 2 dias: Atenção | 3 dias: Alerta | Mais de 3 dias: Atraso",
+        "regra": REGRA_PADRAO,
     },
     {
+        "aba": "Draft BL",
         "titulo": "Controle de Recebimento Draft BL",
         "inicio": ["Data Envio Draft BL", "Data Envio do Draft BL"],
         "fim": ["Data Recebimento Draft BL", "Data Recebimento do Draft BL"],
         "descricao": "Acompanhamento do recebimento do Draft BL.",
-        "regra": "Menos de 1 dia: Dentro do Prazo | 2 dias: Atenção | 3 dias: Alerta | Mais de 3 dias: Atraso",
+        "regra": REGRA_PADRAO,
     },
 ]
 
 
+# ─────────────────────────────────────────────────────────────
+# Regras de negócio (inalteradas)
+# ─────────────────────────────────────────────────────────────
 def _encontrar_coluna(df, candidatas):
     for coluna in candidatas:
         if coluna in df.columns:
@@ -153,7 +175,8 @@ def _preparar_medicao(df, config, coluna_inicio, coluna_fim):
     dados["Dias"] = (
         dados["_data_calculo"] - dados[coluna_inicio]
     ).dt.total_seconds() / 86400
-    dados.loc[dados["Dias"] < 0, "Dias"] = pd.NA
+    dados.loc[dados["Dias"] < 0, "Dias"] = float("nan")
+    dados["Dias"] = pd.to_numeric(dados["Dias"], errors="coerce")
 
     if config.get("modal_especial") and "Modal" in dados.columns:
         dados["Farol da etapa"] = dados.apply(
@@ -163,125 +186,114 @@ def _preparar_medicao(df, config, coluna_inicio, coluna_fim):
     else:
         dados["Farol da etapa"] = dados["Dias"].apply(_classificar_dias)
 
+    # usado pelo filtro "Situação" e pela tabela (mesmo padrão da página de Prontidão)
+    dados["Situação da etapa"] = dados[coluna_fim].apply(
+        lambda x: "Concluída" if pd.notna(x) else "Em andamento"
+    )
     return dados
 
 
+# ─────────────────────────────────────────────────────────────
+# Bloco de cada medição
+# ─────────────────────────────────────────────────────────────
 def _exibir_bloco(df, config, indice):
     coluna_inicio = _encontrar_coluna(df, config["inicio"])
     coluna_fim = _encontrar_coluna(df, config["fim"])
+    chave = f"pre_alerta_{indice}"
 
-    st.markdown("---")
-    st.subheader(f"📐 {config['titulo']}")
-    st.caption(config["descricao"])
+    secao(config["titulo"], config["descricao"])
 
     if not coluna_inicio or not coluna_fim:
-        st.warning(
+        aviso(
             "Esta medição está identificada no PDF, mas não foi possível "
             "localizar as duas colunas de data correspondentes na base. "
-            f"Coluna inicial esperada: {', '.join(config['inicio'])}. "
-            f"Coluna final esperada: {', '.join(config['fim'])}."
+            f"Coluna inicial esperada: {escape(', '.join(config['inicio']))}. "
+            f"Coluna final esperada: {escape(', '.join(config['fim']))}.",
+            "atencao",
         )
         return
 
     etapa = _preparar_medicao(df, config, coluna_inicio, coluna_fim)
 
-    c_ref, c_proc = st.columns(2)
-    with c_ref:
-        ref = st.text_input(
-            "Pesquisar por Referência do Cliente",
-            key=f"pre_alerta_ref_{indice}",
-        ).strip()
-    with c_proc:
-        processo = st.text_input(
-            "Pesquisar por Nº Processo",
-            key=f"pre_alerta_proc_{indice}",
-        ).strip()
+    aviso(f"<b>Instrução da medição:</b> {escape(config['regra'])}", "info")
+    filtrado = barra_filtros(etapa, coluna_inicio, chave)
 
-    if ref and "Ref.Cliente" in etapa.columns:
-        etapa = etapa[
-            etapa["Ref.Cliente"].astype(str).str.contains(ref, case=False, na=False)
-        ]
-    if processo and "Nº Processo" in etapa.columns:
-        etapa = etapa[
-            etapa["Nº Processo"].astype(str).str.contains(
-                processo, case=False, na=False
-            )
-        ]
+    # ── Indicadores (as mesmas métricas da versão anterior) ──
+    contagem = filtrado["Farol da etapa"].value_counts()
+    total = len(filtrado)
+    dentro = int(contagem.get("DENTRO DO PRAZO", 0))
+    atencao = int(contagem.get("ATENÇÃO", 0))
+    alerta = int(contagem.get("ALERTA", 0))
+    atraso = int(contagem.get("ATRASO", 0))
 
-    contagem = etapa["Farol da etapa"].value_counts()
-    total = len(etapa)
+    def pct(n):
+        return f"{n / total * 100:.1f}% do total" if total else "—"
 
-    k1, k2, k3, k4, k5 = st.columns(5)
-    k1.metric("Processos", total)
-    k2.metric("Dentro do prazo", int(contagem.get("DENTRO DO PRAZO", 0)))
-    k3.metric("Atenção", int(contagem.get("ATENÇÃO", 0)))
-    k4.metric("Alerta", int(contagem.get("ALERTA", 0)))
-    k5.metric("Atraso", int(contagem.get("ATRASO", 0)))
-
-    graf, instrucao = st.columns([1.1, 1])
-    with graf:
-        st.markdown("**Percentual por Farol**")
-        if total:
-            resumo = contagem.rename_axis("Farol").reset_index(name="Quantidade")
-            fig = px.pie(
-                resumo,
-                names="Farol",
-                values="Quantidade",
-                hole=0.60,
-                color="Farol",
-                color_discrete_map=CORES_FAROL,
-            )
-            fig.update_traces(textposition="inside", textinfo="percent")
-            fig.update_layout(
-                height=270,
-                margin=dict(t=10, b=5, l=5, r=5),
-                legend_title_text="",
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Nenhum processo encontrado para esta medição.")
-
-    with instrucao:
-        st.markdown("**Instrução da medição**")
-        st.info(config["regra"])
-
-    st.markdown("**Detalhamento dos processos**")
-    colunas = [
-        "Status", "Ref.Cliente", "Nº Processo", "Responsável", "Planta",
-        "Categoria", "Exportador", "Modal", coluna_inicio, coluna_fim,
-        "Dias", "Farol da etapa",
+    secao("Indicadores da etapa")
+    k = st.columns(5)
+    metricas = [
+        ("Processos", total, "No recorte atual", tema_ativo()["acento"]),
+        ("Dentro do prazo", dentro, pct(dentro), CORES_FAROL["DENTRO DO PRAZO"]),
+        ("Atenção", atencao, pct(atencao), CORES_FAROL["ATENÇÃO"]),
+        ("Alerta", alerta, pct(alerta), CORES_FAROL["ALERTA"]),
+        ("Atraso", atraso, pct(atraso), CORES_FAROL["ATRASO"]),
     ]
-    colunas = [c for c in colunas if c in etapa.columns]
-    tabela = etapa[colunas].copy()
+    for coluna, metrica in zip(k, metricas):
+        with coluna:
+            cartao(*metrica)
 
-    for coluna in (coluna_inicio, coluna_fim):
-        if coluna in tabela.columns:
-            tabela[coluna] = (
-                pd.to_datetime(tabela[coluna], errors="coerce")
-                .dt.strftime("%d/%m/%Y")
-                .fillna("—")
-            )
-
-    tabela["Dias"] = tabela["Dias"].round(0)
-    st.dataframe(tabela, use_container_width=True, hide_index=True, height=350)
-
-    csv = etapa.to_csv(index=False, sep=";", encoding="utf-8-sig").encode("utf-8-sig")
-    st.download_button(
-        "Baixar dados desta medição",
-        data=csv,
-        file_name=f"pre_alerta_medicao_{indice + 1}.csv",
-        mime="text/csv",
-        key=f"pre_alerta_download_{indice}",
-    )
-
-
-def pagina_pre_alerta(df):
-    st.title("Pré-Alerta")
-    st.caption("Acompanhamento das etapas anteriores ao embarque e preparação documental")
-
-    if df.empty:
-        st.warning("Não há processos disponíveis para os filtros selecionados.")
+    if not total:
+        aviso("Nenhum processo encontrado para esta medição com os filtros selecionados. "
+              "Ajuste os filtros para ver os gráficos.")
         return
 
-    for indice, config in enumerate(MEDICOES):
-        _exibir_bloco(df, config, indice)
+    faixa_farol(contagem, total)
+
+    # Nas medições com regra por modal (embarque) os limites mudam por linha,
+    # então o histograma não desenha as marcas fixas de 1 e 3 dias.
+    modal_especial = bool(config.get("modal_especial"))
+    marcos = () if modal_especial else ((1, "1 dia"), (3, "3 dias"))
+    sub_hist = ("Dias decorridos por farol · selecione uma área para dar zoom" if modal_especial
+                else "Linhas pontilhadas marcam 1 e 3 dias · selecione uma área para dar zoom")
+
+    g1, g2 = st.columns([1, 1.35])
+    with g1:
+        with st.container(border=True):
+            titulo_card("Percentual por farol",
+                        "Passe o mouse para ver os números · clique na legenda para ocultar")
+            grafico_farol(filtrado, chave)
+    with g2:
+        with st.container(border=True):
+            titulo_card("Distribuição do tempo de execução", sub_hist)
+            grafico_duracao(filtrado, chave, marcos=marcos, usar_faixas=not modal_especial)
+
+    with st.container(border=True):
+        titulo_card("Evolução mensal", "Processos por farol (barras) e % dentro do prazo (linha)")
+        grafico_evolucao(filtrado, coluna_inicio, chave)
+
+    revisar = int(contagem.get("REVISAR REGRA", 0))
+    if revisar:
+        aviso(f"{revisar} processo(s) estão em 'Revisar regra' (faixa de exatamente 1 dia ou "
+              "modal não reconhecido). A regra de negócio precisa ser confirmada.", "atencao")
+
+    secao("Detalhamento dos processos", "Cada linha mostra o farol e o tempo decorrido da etapa")
+    tabela_detalhada(filtrado, coluna_inicio, coluna_fim, chave,
+                     f"pre_alerta_medicao_{indice + 1}.csv")
+
+
+# ─────────────────────────────────────────────────────────────
+# Página
+# ─────────────────────────────────────────────────────────────
+def pagina_pre_alerta(df):
+    cabecalho("Pré-Alerta",
+              "Acompanhamento das etapas anteriores ao embarque e preparação documental",
+              chave="pre_alerta")
+
+    if df is None or df.empty:
+        aviso("Não há processos disponíveis para os filtros selecionados.", "atencao")
+        return
+
+    abas = st.tabs([c.get("aba") or c["titulo"].replace("Controle de ", "") for c in MEDICOES])
+    for indice, (aba, config) in enumerate(zip(abas, MEDICOES)):
+        with aba:
+            _exibir_bloco(df, config, indice)
