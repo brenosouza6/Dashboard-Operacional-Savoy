@@ -486,8 +486,7 @@ def grafico_evolucao(dados, coluna_inicio, chave):
 
     eixo_x = dict(
         hoverformat="%m/%Y",
-        rangeslider=dict(visible=True, thickness=0.07, bgcolor=t["cartao2"],
-                         bordercolor=t["borda"], borderwidth=1),
+        rangeslider=dict(visible=False),
         rangeselector=dict(
             buttons=[
                 dict(count=3, label="3 meses", step="month", stepmode="backward"),
@@ -500,6 +499,7 @@ def grafico_evolucao(dados, coluna_inicio, chave):
             bordercolor=t["borda"], borderwidth=1,
             font=dict(size=11, color=t["texto2"]),
         ),
+
     )
     if len(tabela) <= 18:
         eixo_x.update(

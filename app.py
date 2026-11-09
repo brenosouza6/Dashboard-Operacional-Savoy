@@ -8,7 +8,6 @@ from pathlib import Path
 # ==================================================
 from paginas.home import pagina_home
 from paginas.padrao_visual import aplicar_tema
-from paginas.visao_geral import pagina_visao_geral
 from paginas.prontidao import pagina_prontidao
 from paginas.pre_alerta import pagina_pre_alerta
 from paginas.transito_internacional import pagina_transito_internacional
@@ -70,7 +69,6 @@ pagina = st.sidebar.radio(
     "Etapas",
     [
         "Home",
-        "Visão Geral",
         "Prontidão",
         "Pré-Alerta",
         "Trânsito Internacional",
@@ -96,9 +94,6 @@ aplicar_tema()
 if pagina == "Home":
 
     pagina_home()
-
-elif pagina == "Visão Geral":
-    pagina_visao_geral(dados)
 
 elif pagina == "Prontidão":
     pagina_prontidao(dados)
