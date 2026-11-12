@@ -493,9 +493,9 @@ def pagina_numerarios(df):
     )
 
     aba_pre, aba_adm, aba_pag = st.tabs([
-        "1. Solicitação de Numerário — Pré-adm",
-        "2. Solicitação de Numerário — Adm / Cliente",
-        "3. Controle de Pagamento",
+        "Controle de Solicitação de Numerário — Pré-adm",
+        "Controle de Solicitação de Numerário — Adm / Cliente",
+        "Controle de Controle de Pagamento",
     ])
 
     # --------------------------------------------------------

@@ -7,39 +7,16 @@ import holidays
 
 try:
     from padrao_visual import (
-        CORES_FAROL,
-        ORDEM_FAROL,
-        aviso,
-        barra_filtros,
-        cabecalho,
-        cartao,
-        faixa_farol,
-        grafico_duracao,
-        grafico_evolucao,
-        grafico_farol,
-        secao,
-        tabela_detalhada,
-        tema_ativo,
-        titulo_card,
+        CORES_FAROL, ORDEM_FAROL, aviso, barra_filtros, cabecalho, cartao,
+        faixa_farol, grafico_duracao, grafico_evolucao, grafico_farol, nome_farol,
+        secao, tabela_detalhada, tema_ativo, titulo_card,
     )
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # quando as páginas são importadas como pacote (paginas.xxx)
     from paginas.padrao_visual import (
-        CORES_FAROL,
-        ORDEM_FAROL,
-        aviso,
-        barra_filtros,
-        cabecalho,
-        cartao,
-        faixa_farol,
-        grafico_duracao,
-        grafico_evolucao,
-        grafico_farol,
-        secao,
-        tabela_detalhada,
-        tema_ativo,
-        titulo_card,
+        CORES_FAROL, ORDEM_FAROL, aviso, barra_filtros, cabecalho, cartao,
+        faixa_farol, grafico_duracao, grafico_evolucao, grafico_farol, nome_farol,
+        secao, tabela_detalhada, tema_ativo, titulo_card,
     )
-
 
 # ============================================================
 # CONFIGURAÇÃO DAS QUATRO MÉTRICAS
@@ -580,10 +557,10 @@ def pagina_transito_internacional(df):
     # --------------------------------------------------------
 
     abas = st.tabs([
-        "B/L Assinado",
-        "Redirecionamento Decimar",
-        "Chegada da Carga",
-        "Presença de Carga",
+        "Controle de Draft de Conhecimento Assinado",
+        "Controle de Redirecionamento Decimar",
+        "Controle de Chegada da Carga",
+        "Controle de Presença de Carga",
     ])
 
     for aba, medicao in zip(abas, MEDICOES):

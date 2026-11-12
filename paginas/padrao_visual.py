@@ -1,5 +1,5 @@
 """
-Padrão visual compartilhado do dashboard (tema claro/escuro, cabeçalho, cartões, gráficos e tabela).
+Padrão visual profissional do dashboard Savoy/Pibernat (tema claro/escuro, componentes e análise interativa).
 
 Todas as páginas usam este módulo, então qualquer ajuste de cor, fonte ou gráfico vale para o app inteiro.
 Mantenha este arquivo na mesma pasta das páginas (por exemplo, "paginas/").
@@ -12,6 +12,8 @@ Uso básico em uma página:
 """
 from datetime import datetime
 from html import escape
+import re
+import unicodedata
 
 import pandas as pd
 import plotly.express as px
@@ -46,28 +48,29 @@ PLOTLY_CONFIG = {
 # ─────────────────────────────────────────────────────────────
 TEMAS = {
     "claro": {
-        "template": "plotly_white",
-        "fundo": "#F3F6FA", "cartao": "#FFFFFF", "cartao2": "#F7F9FC",
-        "borda": "#DFE5EC", "input_borda": "#D3DCE6", "input_bg": "#F7F9FC",
-        "texto": "#13233A", "texto2": "#3B4A5E", "texto3": "#64748B", "hint": "#8392A5",
-        "acento": "#1F6FB2", "acento_suave": "#E3EEF8", "hover": "#EDF2F8",
-        "destaque": "#13233A", "grade": "#EBEFF4",
-        "aviso_bg": "#FFF6DB", "aviso_borda": "#F1DC9B", "aviso_texto": "#6B4E00",
-        "hero": "linear-gradient(115deg,#142E4C 0%,#245783 100%)",
-        "sombra": "0 1px 2px rgba(16,35,60,.05), 0 6px 16px rgba(16,35,60,.04)",
+        "scheme": "light", "template": "plotly_white",
+        "fundo": "#F3F6FB", "cartao": "#FFFFFF", "cartao2": "#F8FAFD",
+        "borda": "#E3EAF2", "input_borda": "#D7E0EB", "input_bg": "#FFFFFF",
+        "texto": "#12243A", "texto2": "#40536B", "texto3": "#708198", "hint": "#91A0B3",
+        "acento": "#2468B4", "acento_suave": "#E7F0FA", "hover": "#F1F6FC",
+        "destaque": "#163A5B", "grade": "#EAF0F6",
+        "aviso_bg": "#FFF8E8", "aviso_borda": "#F2DDAA", "aviso_texto": "#795719",
+        "hero": "linear-gradient(112deg,#0B1D31 0%,#123653 52%,#1C5278 100%)",
+        "sombra": "0 2px 5px rgba(15,35,58,.035), 0 12px 34px rgba(15,35,58,.055)",
     },
     "escuro": {
-        "template": "plotly_dark",
-        "fundo": "#0B121C", "cartao": "#131E2C", "cartao2": "#182536",
-        "borda": "#243246", "input_borda": "#2D3D54", "input_bg": "#0F1824",
-        "texto": "#E8EEF6", "texto2": "#B9C6D6", "texto3": "#8FA0B5", "hint": "#6F8197",
-        "acento": "#5AA2E0", "acento_suave": "#1C3350", "hover": "#1B2A3D",
-        "destaque": "#E8EEF6", "grade": "#223045",
-        "aviso_bg": "#2B2410", "aviso_borda": "#5A4A18", "aviso_texto": "#F0D58A",
-        "hero": "linear-gradient(115deg,#0E2238 0%,#1B4A74 100%)",
-        "sombra": "0 1px 2px rgba(0,0,0,.45), 0 6px 16px rgba(0,0,0,.25)",
+        "scheme": "dark", "template": "plotly_dark",
+        "fundo": "#0A1420", "cartao": "#111E2D", "cartao2": "#162638",
+        "borda": "#26384D", "input_borda": "#344A62", "input_bg": "#0D1926",
+        "texto": "#EDF3FA", "texto2": "#C0CEDD", "texto3": "#91A4B9", "hint": "#71859B",
+        "acento": "#6CAEE8", "acento_suave": "#1A3651", "hover": "#1A2B3E",
+        "destaque": "#E6F0FA", "grade": "#25364A",
+        "aviso_bg": "#302817", "aviso_borda": "#665326", "aviso_texto": "#F2D995",
+        "hero": "linear-gradient(112deg,#081522 0%,#102A42 52%,#17466A 100%)",
+        "sombra": "0 2px 7px rgba(0,0,0,.22), 0 14px 38px rgba(0,0,0,.20)",
     },
 }
+
 
 
 def tema_ativo():
@@ -81,153 +84,287 @@ def alternar_tema():
 
 CSS_BASE = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+:root { color-scheme: __scheme__; }
+.stApp {
+  background: radial-gradient(ellipse at 86% 0%, rgba(36,104,180,.055), transparent 34%),
+              linear-gradient(180deg, __fundo__ 0%, __fundo__ 100%);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+[data-testid="stAppViewContainer"], [data-testid="stMain"] {background: transparent;}
+[data-testid="stHeader"] {background: transparent; height: 2.7rem;}
+[data-testid="stHeader"] button {color: __texto2__;}
+.block-container {max-width: 1680px; padding-top: 2.35rem; padding-bottom: 3.4rem;}
+[data-testid="stMainBlockContainer"] {padding-left: clamp(1.25rem, 3vw, 3.4rem); padding-right: clamp(1.25rem, 3vw, 3.4rem);}
+[data-testid="stMarkdownContainer"], [data-testid="stCaptionContainer"] {font-family: inherit;}
+.stApp h1, .stApp h2, .stApp h3, .stApp h4 {color: __texto__; letter-spacing: -.025em;}
+.stApp p, .stApp li {color: __texto2__;}
+.stApp [data-testid="stCaptionContainer"] {color: __texto3__;}
+.stApp [data-testid="stWidgetLabel"] p, .stApp label {color: __texto3__; font-weight: 650; font-size: .78rem; letter-spacing: .01em;}
+.stApp [data-testid="stVerticalBlock"] {gap: .9rem;}
+hr {border-color: __borda__ !important; opacity: .8;}
+::-webkit-scrollbar {width: 9px; height: 9px;}
+::-webkit-scrollbar-thumb {background: __borda__; border-radius: 20px; border: 2px solid transparent; background-clip: padding-box;}
+::-webkit-scrollbar-track {background: transparent;}
 
-/* ── Estrutura geral ───────────────────────── */
-.stApp {background:__fundo__}
-[data-testid="stHeader"] {background:transparent;pointer-events:none}
-[data-testid="stHeader"] button, [data-testid="stHeader"] a,
-[data-testid="stHeader"] [data-baseweb] {pointer-events:auto}
-[class*="st-key-botao_tema"] {position:relative;z-index:1000001}
-.block-container {padding-top:4.4rem;padding-bottom:3rem;max-width:1500px}
-.prontidao-hero, .kpi, .secao, .card-titulo, .aviso, .tabela-wrap,
-[data-testid="stMarkdownContainer"] {font-family:'Inter','Segoe UI',sans-serif}
-::-webkit-scrollbar {width:10px;height:10px}
-::-webkit-scrollbar-thumb {background:__borda__;border-radius:8px}
-::-webkit-scrollbar-track {background:transparent}
+/* Navegação institucional */
+[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #0B1B2C 0%, #102A40 52%, #0D2236 100%);
+  border-right: 1px solid rgba(255,255,255,.07);
+}
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] li,
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3, [data-testid="stSidebar"] label,
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {color: #DCE7F2 !important;}
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {color: #91A7BC !important;}
+[data-testid="stSidebar"] hr {border-color: rgba(221,235,248,.14) !important;}
+[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] {gap: .34rem;}
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+  border: 1px solid transparent; border-radius: 10px; padding: .47rem .68rem;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+  background: rgba(255,255,255,.075); border-color: rgba(255,255,255,.08); transform: translateX(2px);
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
+  background: linear-gradient(100deg, rgba(73,145,207,.27), rgba(73,145,207,.09));
+  border-color: rgba(125,184,231,.28); box-shadow: inset 3px 0 0 #79B8E8;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label p,
+[data-testid="stSidebar"] [data-testid="stRadio"] label span {color: #DCE7F2 !important; font-weight: 600;}
+[data-testid="stSidebar"] .stButton button {
+  width: 100%; background: rgba(255,255,255,.07) !important; color: #EAF3FA !important;
+  border: 1px solid rgba(255,255,255,.15) !important; border-radius: 10px !important;
+  box-shadow: none !important; font-weight: 650;
+}
+[data-testid="stSidebar"] .stButton button:hover {background: rgba(255,255,255,.13) !important; border-color: rgba(255,255,255,.28) !important;}
 
-/* ── Barra lateral (se existir) ────────────── */
-[data-testid="stSidebar"] {background:__cartao__;border-right:1px solid __borda__}
-[data-testid="stSidebar"] p, [data-testid="stSidebar"] label,
-[data-testid="stSidebar"] span, [data-testid="stSidebar"] h1,
-[data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {color:__texto2__}
-
-/* ── Texto ─────────────────────────────────── */
-.stApp [data-testid="stMarkdownContainer"] p,
-.stApp [data-testid="stMarkdownContainer"] li,
-.stApp [data-testid="stCaptionContainer"] {color:__texto2__}
-.stApp h1, .stApp h2, .stApp h3, .stApp h4 {color:__texto__}
-.stApp [data-testid="stWidgetLabel"] p {color:__texto3__;font-weight:600;font-size:12.5px}
-
-/* ── Cabeçalho ─────────────────────────────── */
+/* Cabeçalho premium */
 .prontidao-hero {
-  background:__hero__;padding:26px 30px;border-radius:16px;margin-bottom:18px;
-  display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
-  box-shadow:__sombra__
+  position: relative; isolation: isolate; overflow: hidden;
+  background: __hero__; border: 1px solid rgba(255,255,255,.10);
+  border-radius: 20px; padding: 27px 30px; margin: 0 0 22px;
+  display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap;
+  box-shadow: 0 15px 42px rgba(8,28,48,.16);
 }
-.stApp .prontidao-hero h1 {color:#fff;font-size:27px;margin:0 0 4px;font-weight:700;letter-spacing:-.01em;padding:0}
-.stApp .prontidao-hero p {color:#DCE8F4;margin:0;font-size:13.5px}
-.hero-chip {
-  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);
-  padding:7px 14px;border-radius:999px;font-size:12px;color:#EAF2FA;white-space:nowrap
+.prontidao-hero::before {
+  content: ""; position: absolute; z-index: -1; width: 440px; height: 440px; right: -120px; top: -280px;
+  border: 1px solid rgba(255,255,255,.13); border-radius: 50%;
+  box-shadow: 0 0 0 34px rgba(255,255,255,.025), 0 0 0 72px rgba(255,255,255,.018);
 }
-
-.hero-marca {display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.prontidao-hero::after {
+  content: ""; position: absolute; z-index: -1; width: 240px; height: 240px; right: 17%; bottom: -205px;
+  border: 1px solid rgba(255,255,255,.10); border-radius: 50%;
+}
+.hero-marca {display: flex; align-items: center; gap: 22px; flex-wrap: wrap; min-width: 0;}
 .hero-logo {
-  background:#FFFFFF;border-radius:12px;padding:9px 18px;display:flex;align-items:center;
-  box-shadow:0 2px 10px rgba(0,0,0,.18)
+  background: rgba(255,255,255,.98); border: 1px solid rgba(255,255,255,.45);
+  border-radius: 14px; padding: 10px 17px; display: flex; align-items: center; justify-content: center;
+  min-width: 114px; min-height: 66px; box-shadow: 0 7px 20px rgba(0,0,0,.17);
 }
-.hero-logo img {height:42px;width:auto;display:block}
+.hero-logo img {height: 43px; max-width: 190px; width: auto; object-fit: contain; display: block;}
+.hero-eyebrow {font-size: 10px; text-transform: uppercase; letter-spacing: .19em; font-weight: 750; color: #9FC7E7; margin-bottom: 7px;}
+.stApp .prontidao-hero h1 {color: #FFFFFF; font-size: clamp(1.45rem, 2.4vw, 2rem); line-height: 1.18; margin: 0 0 7px; font-weight: 750; letter-spacing: -.035em; padding: 0;}
+.stApp .prontidao-hero p {color: #D2E1EE; margin: 0; font-size: .88rem; line-height: 1.55; max-width: 760px;}
+.hero-side {display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 150px;}
+.hero-chip {display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.18); padding: 8px 13px; border-radius: 999px; font-size: 11px; color: #F2F7FC; white-space: nowrap; backdrop-filter: blur(8px);}
+.hero-dot {width: 7px; height: 7px; border-radius: 50%; background: #64D7A3; box-shadow: 0 0 0 4px rgba(100,215,163,.13); display: inline-block;}
+.hero-updated {font-size: 10px; color: #A9C1D5; letter-spacing: .04em;}
 
-/* ── Cartões de indicador ──────────────────── */
+/* Indicadores */
 .kpi {
-  background:__cartao__;border:1px solid __borda__;border-radius:12px;box-shadow:__sombra__;
-  padding:14px 16px 12px 20px;position:relative;overflow:hidden;min-height:108px
+  position: relative; overflow: hidden; min-height: 126px; padding: 17px 19px 16px 20px;
+  background: __cartao__; border: 1px solid __borda__; border-radius: 16px; box-shadow: __sombra__;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
-.kpi::before {content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--cor)}
-.kpi-titulo {font-size:12.5px;color:__texto3__;font-weight:600}
-.kpi-valor {font-size:31px;color:__texto__;font-weight:700;line-height:1.35;letter-spacing:-.02em}
-.kpi-detalhe {font-size:12px;color:__hint__}
+.kpi:hover {transform: translateY(-3px); border-color: color-mix(in srgb, var(--cor) 38%, __borda__); box-shadow: 0 12px 30px rgba(12,37,64,.10);}
+.kpi::before {content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 4px; border-radius: 0 5px 5px 0; background: var(--cor);}
+.kpi::after {content: ""; position: absolute; width: 118px; height: 118px; right: -50px; top: -55px; border-radius: 50%; background: var(--cor); opacity: .055;}
+.kpi-head {display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px;}
+.kpi-titulo {font-size: 11px; line-height: 1.4; color: __texto3__; font-weight: 750; text-transform: uppercase; letter-spacing: .075em;}
+.kpi-icone {width: 29px; height: 29px; flex: 0 0 29px; border-radius: 9px; background: color-mix(in srgb, var(--cor) 12%, __cartao__); color: var(--cor); display: grid; place-items: center; font-size: 14px; font-weight: 800;}
+.kpi-valor {font-size: clamp(1.65rem, 2.1vw, 2.15rem); color: __texto__; font-weight: 780; line-height: 1.16; letter-spacing: -.045em; font-variant-numeric: tabular-nums;}
+.kpi-detalhe {font-size: 11px; color: __hint__; margin-top: 7px; line-height: 1.4;}
 
-/* ── Faixa de faróis ───────────────────────── */
-.faixa {display:flex;height:10px;border-radius:999px;overflow:hidden;gap:2px;margin:14px 0 6px}
-.faixa div {min-width:4px;transition:filter .15s}
-.faixa div:hover {filter:brightness(1.12)}
+/* Distribuição / secções */
+.faixa {display: flex; height: 9px; border-radius: 20px; overflow: hidden; gap: 3px; margin: 15px 0 7px; background: __borda__;}
+.faixa div {min-width: 3px; transition: filter .16s ease, transform .16s ease;}
+.faixa div:hover {filter: brightness(1.12); transform: scaleY(1.35);}
+.secao {display: flex; align-items: center; gap: 10px; font-size: 16px; line-height: 1.3; font-weight: 760; color: __texto__; margin: 26px 0 3px; letter-spacing: -.02em;}
+.secao::before {content: ""; width: 4px; height: 18px; flex: 0 0 4px; border-radius: 5px; background: __acento__;}
+.secao-sub {font-size: 11.5px; color: __texto3__; margin: 0 0 10px 14px;}
+.card-titulo {font-size: 13px; font-weight: 750; color: __texto__; margin: 0 0 3px; letter-spacing: -.01em;}
+.card-sub {font-size: 11px; color: __hint__; margin: 0 0 7px;}
+.aviso {padding: 13px 16px; border-radius: 12px; font-size: 12.5px; line-height: 1.5; border: 1px solid; margin: 10px 0;}
+.aviso-info {background: __acento_suave__; border-color: __borda__; color: __texto2__;}
+.aviso-atencao {background: __aviso_bg__; border-color: __aviso_borda__; color: __aviso_texto__;}
 
-/* ── Títulos e avisos ──────────────────────── */
-.secao {font-size:17px;font-weight:700;color:__texto__;margin:26px 0 2px}
-.secao-sub {font-size:12.5px;color:__texto3__;margin:0 0 10px;font-family:'Inter','Segoe UI',sans-serif}
-.card-titulo {font-size:14px;font-weight:650;color:__texto__;margin-bottom:2px}
-.card-sub {font-size:11.5px;color:__hint__;margin-bottom:6px;font-family:'Inter','Segoe UI',sans-serif}
-.aviso {padding:12px 16px;border-radius:12px;font-size:13px;border:1px solid;margin:10px 0}
-.aviso-info {background:__acento_suave__;border-color:__borda__;color:__texto2__}
-.aviso-atencao {background:__aviso_bg__;border-color:__aviso_borda__;color:__aviso_texto__}
+/* Superfícies */
+[data-testid="stVerticalBlockBorderWrapper"] {border-radius: 15px !important; border-color: __borda__ !important; background: __cartao__ !important; box-shadow: __sombra__;}
+[data-testid="stExpander"] {border: 1px solid __borda__ !important; border-radius: 13px !important; background: __cartao__ !important;}
+[data-testid="stExpander"] summary, [data-testid="stExpander"] summary p {color: __texto__ !important; font-weight: 650;}
+[data-testid="stAlert"] {border-radius: 12px;}
 
-/* ── Contêineres, expander, botões ─────────── */
-[data-testid="stVerticalBlockBorderWrapper"] {
-  border-radius:12px;border-color:__borda__;background:__cartao__;box-shadow:__sombra__
+/* Botões e controles */
+.stApp .stButton button, .stApp .stDownloadButton button {
+  min-height: 2.55rem; border-radius: 10px; border: 1px solid __input_borda__;
+  background: __cartao__; color: __texto__; font-weight: 680; box-shadow: 0 2px 5px rgba(15,35,58,.035);
+  transition: all .18s ease;
 }
-.stApp [data-testid="stExpander"] {background:__cartao__;border-color:__borda__;border-radius:12px}
-.stApp [data-testid="stExpander"] summary,
-.stApp [data-testid="stExpander"] summary p {color:__texto__}
-.stApp .stDownloadButton button, .stApp .stButton button {
-  background:__cartao__;color:__texto__;border:1px solid __input_borda__;border-radius:10px;
-  font-weight:600;box-shadow:__sombra__;transition:border-color .15s,color .15s
-}
-.stApp .stDownloadButton button:hover, .stApp .stButton button:hover {
-  border-color:__acento__;background:__hover__
-}
-.stApp .stDownloadButton button:hover p, .stApp .stButton button:hover p {color:__acento__}
-.stApp .stButton button:focus:not(:active) {border-color:__acento__;box-shadow:0 0 0 3px __acento_suave__}
-
-/* ── Campos de filtro ──────────────────────── */
+.stApp .stButton button:hover, .stApp .stDownloadButton button:hover {border-color: __acento__; color: __acento__; background: __hover__; transform: translateY(-1px);}
+.stApp .stButton button:focus-visible, .stApp .stDownloadButton button:focus-visible {box-shadow: 0 0 0 3px __acento_suave__; outline: none;}
 .stApp [data-baseweb="input"], .stApp [data-baseweb="base-input"],
-.stApp [data-baseweb="select"] > div {
-  background-color:__input_bg__;border-color:__input_borda__;border-radius:10px;color:__texto__
+.stApp [data-baseweb="select"] > div, .stApp [data-baseweb="textarea"] {
+  background: __input_bg__; border-color: __input_borda__; border-radius: 10px; color: __texto__;
 }
-.stApp [data-baseweb="input"]:focus-within, .stApp [data-baseweb="select"]:focus-within > div {
-  border-color:__acento__;box-shadow:0 0 0 3px __acento_suave__
-}
-.stApp input {color:__texto__}
-.stApp input::placeholder {color:__hint__}
-.stApp [data-baseweb="select"] div {color:__texto__}
-.stApp [data-baseweb="select"] svg {fill:__texto3__}
-.stApp [data-baseweb="select"] [data-baseweb="tag"] {background-color:__acento_suave__;border-radius:8px}
-.stApp [data-baseweb="select"] [data-baseweb="tag"],
-.stApp [data-baseweb="select"] [data-baseweb="tag"] span {color:__acento__;font-weight:600}
-.stApp [data-baseweb="select"] [data-baseweb="tag"] svg {fill:__acento__}
+.stApp [data-baseweb="input"]:focus-within, .stApp [data-baseweb="select"]:focus-within > div,
+.stApp [data-baseweb="textarea"]:focus-within {border-color: __acento__; box-shadow: 0 0 0 3px __acento_suave__;}
+.stApp input, .stApp textarea {color: __texto__ !important;}
+.stApp input::placeholder, .stApp textarea::placeholder {color: __hint__ !important;}
+.stApp [data-baseweb="select"] div {color: __texto__;}
+.stApp [data-baseweb="select"] svg {fill: __texto3__;}
+.stApp [data-baseweb="select"] [data-baseweb="tag"] {background: __acento_suave__; border-radius: 7px;}
+.stApp [data-baseweb="select"] [data-baseweb="tag"], .stApp [data-baseweb="select"] [data-baseweb="tag"] span {color: __acento__; font-weight: 650;}
+[data-baseweb="popover"] > div {background: __cartao__; border: 1px solid __borda__; border-radius: 12px; box-shadow: __sombra__;}
+[data-baseweb="menu"], [data-baseweb="calendar"] {background: __cartao__; color: __texto__;}
+[data-baseweb="menu"] li {color: __texto2__;}
+[data-baseweb="menu"] li:hover {background: __hover__;}
+[data-baseweb="menu"] li[aria-selected="true"] {background: __acento_suave__; color: __acento__;}
+[data-baseweb="calendar"] button, [data-baseweb="calendar"] div {color: __texto2__;}
+.stApp [data-testid="stCheckbox"] label, .stApp [data-testid="stRadio"] label {color: __texto2__;}
 
-/* ── Listas suspensas e calendário ─────────── */
-[data-baseweb="popover"] > div {
-  background:__cartao__;border:1px solid __borda__;border-radius:12px;box-shadow:__sombra__
-}
-[data-baseweb="menu"], [data-baseweb="calendar"] {background:__cartao__;color:__texto__}
-[data-baseweb="menu"] li {color:__texto2__}
-[data-baseweb="menu"] li:hover {background:__hover__}
-[data-baseweb="menu"] li[aria-selected="true"] {background:__acento_suave__;color:__acento__}
-[data-baseweb="calendar"] button, [data-baseweb="calendar"] div {color:__texto2__}
+/* Abas */
+.stApp button[data-baseweb="tab"] {font-weight: 700; font-size: 12px; padding: 10px 16px; border-radius: 9px 9px 0 0;}
+.stApp button[data-baseweb="tab"] p {color: __texto3__;}
+.stApp button[data-baseweb="tab"][aria-selected="true"] p {color: __acento__;}
+[data-baseweb="tab-highlight"] {background: __acento__; height: 3px; border-radius: 5px;}
+[data-baseweb="tab-border"] {background: __borda__;}
 
-/* ── Abas ──────────────────────────────────── */
-button[data-baseweb="tab"] {font-weight:600;font-size:14.5px;padding:10px 18px}
-.stApp button[data-baseweb="tab"] p {color:__texto3__}
-.stApp button[data-baseweb="tab"][aria-selected="true"] p {color:__acento__}
-[data-baseweb="tab-highlight"] {background-color:__acento__}
-[data-baseweb="tab-border"] {background-color:__borda__}
+/* Tabela interativa: moldura, controles e navegação */
+/* Barra de ferramentas da tabela */
+.stApp [class*="st-key-busca_tabela_"] input {min-height: 42px; border-radius: 10px !important;}
+.stApp [class*="st-key-ordem_"] [data-baseweb="select"],
+.stApp [class*="st-key-tamanho_tabela_"] [data-baseweb="select"],
+.stApp [class*="st-key-pagina_tabela_"] [data-baseweb="select"] {border-radius: 10px !important;}
+/* Tabela analítica própria: aparência uniforme nos temas claro e escuro */
+.data-table-card {background: __cartao__; border: 1px solid __borda__; border-radius: 15px; overflow: hidden; box-shadow: __sombra__; margin: 3px 0 12px;}
+.data-table-scroll {width: 100%; max-height: 590px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: __borda__ transparent;}
+.data-table {width: 100%; min-width: 1080px; border-collapse: separate; border-spacing: 0; table-layout: auto; color: __texto2__; font-size: 12px;}
+.data-table thead th {position: sticky; top: 0; z-index: 3; padding: 13px 14px; text-align: left; white-space: nowrap; background: __cartao2__; color: __texto3__; border-bottom: 1px solid __borda__; font-size: 9px; line-height: 1.35; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;}
+.data-table tbody td {height: 49px; padding: 10px 14px; border-bottom: 1px solid __borda__; color: __texto2__; background: __cartao__; vertical-align: middle; white-space: nowrap; max-width: 245px; overflow: hidden; text-overflow: ellipsis;}
+.data-table tbody tr:nth-child(even) td {background: __cartao2__;}
+.data-table tbody tr:hover td {background: __hover__; color: __texto__;}
+.data-table tbody tr:last-child td {border-bottom: 0;}
+.data-table .cell-primary {color: __texto__; font-weight: 750;}
+.data-table .cell-muted {color: __texto3__;}
+.data-table .cell-center {text-align: center;}
+.data-table .status-pill {display: inline-flex; align-items: center; gap: 7px; max-width: 100%; padding: 5px 9px; border: 1px solid; border-radius: 999px; font-size: 10px; font-weight: 750; line-height: 1.2; white-space: nowrap;}
+.data-table .status-dot {width: 6px; height: 6px; border-radius: 50%; flex: 0 0 6px;}
+.data-table .days-cell {display: flex; flex-direction: column; gap: 5px; min-width: 76px;}
+.data-table .days-value {font-variant-numeric: tabular-nums; color: __texto__; font-weight: 750;}
+.data-table .days-track {display: block; height: 4px; border-radius: 99px; background: __borda__; overflow: hidden;}
+.data-table .days-track i {display: block; height: 100%; border-radius: inherit;}
+.data-table-empty {padding: 30px 18px; text-align: center; color: __texto3__; font-size: 12px;}
+.data-table-footnote {display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-top: 1px solid __borda__; background: __cartao2__; color: __texto3__; font-size: 10px;}
+@media (max-width: 850px) { .data-table {min-width: 920px;} .data-table thead th, .data-table tbody td {padding-left: 10px; padding-right: 10px;} }
 
-/* ── Tabela de detalhamento ────────────────── */
-.tabela-wrap {
-  max-height:440px;overflow:auto;border:1px solid __borda__;border-radius:12px;
-  background:__cartao__;box-shadow:__sombra__
+/* Cards KPI clicáveis — conteúdo visual separado do botão transparente de interação */
+.stApp [class*="st-key-kpi_panel_"] {
+  position: relative !important; min-height: 128px !important; height: 128px !important;
+  overflow: visible !important; padding: 0 !important;
 }
-.tabela-wrap table {width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px}
-.tabela-wrap th {
-  position:sticky;top:0;z-index:1;background:__cartao2__;color:__texto3__;font-weight:600;
-  text-align:left;padding:11px 14px;border-bottom:1px solid __borda__;white-space:nowrap
+.stApp [class*="st-key-kpi_panel_"] .kpi {
+  min-height: 128px; height: 128px; box-sizing: border-box;
+  display: flex; flex-direction: column; justify-content: space-between;
+  gap: 9px; padding: 16px 17px 14px 19px;
 }
-.tabela-wrap td {padding:9px 14px;border-bottom:1px solid __borda__;color:__texto2__;white-space:nowrap}
-.tabela-wrap tbody tr:hover td {background:__hover__}
-.tabela-wrap tbody tr:last-child td {border-bottom:none}
-.chip {
-  display:inline-flex;align-items:center;gap:7px;padding:3px 10px;border-radius:999px;
-  border:1px solid;font-size:11.5px;font-weight:600;color:__texto__
+.stApp [class*="st-key-kpi_panel_"] .kpi-topline {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 9px; min-width: 0;
 }
-.chip i {width:7px;height:7px;border-radius:50%;display:inline-block}
-.dias {display:flex;align-items:center;gap:10px;min-width:120px}
-.dias span {min-width:46px;font-variant-numeric:tabular-nums;color:__texto__}
-.barra {flex:1;height:6px;border-radius:999px;background:__borda__;overflow:hidden}
-.barra i {display:block;height:100%;border-radius:999px}
+.stApp [class*="st-key-kpi_panel_"] .kpi-titulo {
+  flex: 1 1 auto; min-width: 0; max-width: calc(100% - 38px);
+  font-size: 10px; line-height: 1.35; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .075em;
+  color: __texto3__; white-space: normal; overflow-wrap: anywhere;
+}
+.stApp [class*="st-key-kpi_panel_"] .kpi-icone {
+  flex: 0 0 29px; width: 29px; height: 29px; border-radius: 9px;
+  display: grid; place-items: center; font-size: 14px; font-weight: 800;
+  background: color-mix(in srgb, var(--cor) 12%, __cartao__); color: var(--cor);
+}
+.stApp [class*="st-key-kpi_panel_"] .kpi-bottom {min-width: 0; display: flex; flex-direction: column; gap: 4px;}
+.stApp [class*="st-key-kpi_panel_"] .kpi-valor {
+  font-size: clamp(1.65rem, 2.05vw, 2.1rem); line-height: 1.06;
+  font-weight: 800; letter-spacing: -.045em; color: __texto__;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.stApp [class*="st-key-kpi_panel_"] .kpi-detalhe {
+  display: block; max-width: 100%; min-width: 0; margin: 0;
+  color: __texto3__; font-size: 10px; line-height: 1.35;
+  white-space: normal; overflow-wrap: anywhere; word-break: normal;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.stApp [class*="st-key-kpi_panel_"] .kpi-click-hint {
+  position: absolute; right: 12px; bottom: 11px; font-size: 8px;
+  letter-spacing: .07em; text-transform: uppercase; font-weight: 800;
+  color: var(--cor); opacity: .8; pointer-events: none;
+}
+.stApp [class*="st-key-kpi_panel_"] .kpi.is-selected {
+  border-color: var(--cor); background: linear-gradient(145deg, __cartao__, color-mix(in srgb, var(--cor) 9%, __cartao2__));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cor) 65%, transparent), 0 12px 28px rgba(10,35,62,.18);
+}
+/* O botão real ocupa o card todo, mas fica visualmente invisível; o card HTML é a camada visual. */
+.stApp [class*="st-key-kpi_panel_"] [data-testid="stElementContainer"]:has(.stButton) {
+  position: absolute !important; inset: 0 !important; z-index: 8 !important;
+  width: 100% !important; height: 100% !important; margin: 0 !important;
+  padding: 0 !important;
+}
+.stApp [class*="st-key-kpi_panel_"] .stButton,
+.stApp [class*="st-key-kpi_panel_"] .stButton > div {width: 100% !important; height: 100% !important;}
+.stApp [class*="st-key-kpi_panel_"] .stButton button {
+  position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important;
+  min-height: 128px !important; padding: 0 !important; margin: 0 !important;
+  border: 1px solid transparent !important; border-radius: 16px !important;
+  background: transparent !important; box-shadow: none !important;
+  color: transparent !important; opacity: 1 !important; cursor: pointer !important;
+}
+.stApp [class*="st-key-kpi_panel_"] .stButton button p,
+.stApp [class*="st-key-kpi_panel_"] .stButton button span {
+  color: transparent !important; font-size: 0 !important; line-height: 0 !important;
+}
+.stApp [class*="st-key-kpi_panel_"]:has(.stButton button:hover) .kpi {
+  transform: translateY(-3px); border-color: var(--cor); box-shadow: 0 12px 28px rgba(10,35,62,.16);
+}
+.stApp [class*="st-key-kpi_panel_"]:has(.stButton button:focus-visible) .kpi {
+  outline: 3px solid __acento_suave__; outline-offset: 3px;
+}
+.stApp [class*="st-key-kpi_panel_"]:has(.stButton button[kind="primary"]) .kpi {
+  border-color: var(--cor); box-shadow: 0 0 0 2px var(--cor), 0 12px 28px rgba(10,35,62,.16);
+}
+/* Popovers, calendário e menus acompanham o tema escolhido */
+[data-baseweb="popover"] *, [data-baseweb="menu"] *, [data-baseweb="calendar"] * {color: __texto__ !important;}
+[data-baseweb="popover"] [role="option"]:hover, [data-baseweb="menu"] li:hover {background: __hover__ !important;}
+.stApp [data-testid="stDateInput"] input, .stApp [data-testid="stTextInput"] input,
+.stApp [data-testid="stNumberInput"] input, .stApp [data-testid="stTextArea"] textarea {background: __input_bg__ !important; color: __texto__ !important;}
+
+/* Ajustes responsivos */
+@media (max-width: 850px) {
+  .block-container {padding-top: 1.25rem;}
+  .prontidao-hero {padding: 22px; border-radius: 15px;}
+  .hero-side {align-items: flex-start;}
+  .hero-logo {min-width: 95px; padding: 8px 12px;}
+  .hero-logo img {height: 36px;}
+  .stApp [class*="st-key-kpi_panel_"] {height: 122px !important; min-height: 122px !important;}
+  .stApp [class*="st-key-kpi_panel_"] .kpi, .stApp [class*="st-key-kpi_panel_"] .stButton button {height: 122px !important; min-height: 122px !important;}
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important;}
+}
 </style>
 """
+
 
 
 def gerar_css(t):
@@ -247,16 +384,110 @@ def html_limpo(texto):
 # ─────────────────────────────────────────────────────────────
 # Componentes visuais
 # ─────────────────────────────────────────────────────────────
-def cartao(titulo, valor, detalhe, cor):
-    st.markdown(
-        html_limpo(f"""
-        <div class="kpi" style="--cor:{cor}">
-          <div class="kpi-titulo">{titulo}</div>
-          <div class="kpi-valor">{valor}</div>
-          <div class="kpi-detalhe">{detalhe}</div>
-        </div>"""),
-        unsafe_allow_html=True,
-    )
+def _normalizar_texto(valor):
+    texto = unicodedata.normalize("NFKD", str(valor)).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"\s+", " ", texto).strip().casefold()
+
+
+def _selecao_cartao(titulo, farol=None):
+    """Converte títulos de indicadores conhecidos em filtros globais da etapa."""
+    if farol:
+        valores = [farol] if isinstance(farol, str) else list(farol)
+        return {"tipo": "farol", "valores": valores}
+    texto = _normalizar_texto(titulo)
+    if "dentro do prazo" in texto:
+        return {"tipo": "farol", "valores": ["DENTRO DO PRAZO"]}
+    if "atencao" in texto and "alerta" in texto:
+        return {"tipo": "farol", "valores": ["ATENÇÃO", "ALERTA"]}
+    if "atencao" in texto:
+        return {"tipo": "farol", "valores": ["ATENÇÃO"]}
+    if "alerta" in texto:
+        return {"tipo": "farol", "valores": ["ALERTA"]}
+    if "atras" in texto or "vencid" in texto:
+        return {"tipo": "farol", "valores": ["ATRASO"]}
+    if "sem data" in texto:
+        return {"tipo": "farol", "valores": ["SEM DATA"]}
+    if "revisar regra" in texto:
+        return {"tipo": "farol", "valores": ["REVISAR REGRA"]}
+    if "em andamento" in texto:
+        return {"tipo": "situacao", "valores": ["Em andamento"]}
+    if "concluid" in texto or "finalizad" in texto:
+        return {"tipo": "situacao", "valores": ["Concluída"]}
+    if "total de processo" in texto or texto == "processos" or texto == "total":
+        return {"tipo": "todos", "valores": []}
+    return None
+
+
+def _chave_pagina_atual():
+    return str(st.session_state.get("_pagina_filtros_ativa", "global"))
+
+
+def cartao(titulo, valor, detalhe, cor, farol=None, chave=None):
+    """Card de KPI com hierarquia visual fixa; quando mapeado, filtra a página toda ao clicar."""
+    titulo_txt = str(titulo)
+    selecao = _selecao_cartao(titulo_txt, farol=farol)
+    page_key = str(chave or _chave_pagina_atual())
+    state_key = f"_farol_card_filtro_{page_key}"
+    atual = st.session_state.get(state_key)
+    selecionado = bool(selecao is not None and atual == selecao)
+
+    titulo_norm = _normalizar_texto(titulo_txt)
+    if any(p in titulo_norm for p in ("total", "processos", "embarques")):
+        icone = "▦"
+    elif any(p in titulo_norm for p in ("prazo", "regular", "conclu")):
+        icone = "✓"
+    elif any(p in titulo_norm for p in ("atencao", "alerta", "pend")):
+        icone = "!"
+    elif any(p in titulo_norm for p in ("atras", "venc")):
+        icone = "↗"
+    elif any(p in titulo_norm for p in ("valor", "custo", "numerario", "finance")):
+        icone = "$"
+    else:
+        icone = "◈"
+
+    cor_css = escape(str(cor), quote=True)
+    card_classes = "kpi" + (" is-selected" if selecionado else "")
+    detalhe_txt = escape(str(detalhe))
+    conteudo = f"""<div class="{card_classes}" style="--cor:{cor_css}">
+      <div class="kpi-topline">
+        <div class="kpi-titulo">{escape(titulo_txt)}</div>
+        <div class="kpi-icone">{icone}</div>
+      </div>
+      <div class="kpi-bottom">
+        <div class="kpi-valor">{escape(str(valor))}</div>
+        <div class="kpi-detalhe">{detalhe_txt}</div>
+      </div>
+      {('<div class="kpi-click-hint">FILTRO ATIVO</div>' if selecionado else '')}
+    </div>"""
+
+    if selecao is None:
+        st.markdown(conteudo, unsafe_allow_html=True)
+        return
+
+    slug = re.sub(r"[^a-z0-9]+", "_", _normalizar_texto(titulo_txt)).strip("_")[:28] or "indicador"
+    page_slug = re.sub(r"[^a-zA-Z0-9_]+", "_", page_key)[:24] or "pagina"
+    panel_key = f"kpi_panel_{page_slug}_{slug}"
+    widget_key = f"kpi_card_{page_slug}_{slug}"
+
+    # Container com chave permite posicionar um botão transparente sobre o cartão HTML.
+    # Assim, conteúdo, valor e descrição não dependem do layout limitado do rótulo de st.button.
+    with st.container(key=panel_key):
+        st.markdown(conteudo, unsafe_allow_html=True)
+        clicou = st.button(
+            f"Filtrar por {titulo_txt}: {valor}", key=widget_key,
+            help=(f"Filtro ativo: {titulo_txt}. Clique para remover." if selecionado
+                  else f"Filtrar a página inteira por {titulo_txt}. Clique novamente para remover."),
+            use_container_width=True,
+            type="primary" if selecionado else "secondary",
+        )
+
+    if clicou:
+        if selecionado or selecao.get("tipo") == "todos":
+            st.session_state.pop(state_key, None)
+        else:
+            st.session_state[state_key] = selecao
+        st.rerun()
+
 
 
 def titulo_card(titulo, subtitulo=""):
@@ -278,20 +509,28 @@ def secao(titulo, subtitulo=""):
 
 
 def aviso(texto, tipo="info"):
-    st.markdown(f'<div class="aviso aviso-{tipo}">{texto}</div>', unsafe_allow_html=True)
+    tipo_css = "atencao" if str(tipo).casefold() in ("atencao", "atenção", "warning") else "info"
+    st.markdown(
+        f'<div class="aviso aviso-{tipo_css}">{escape(str(texto))}</div>',
+        unsafe_allow_html=True,
+    )
+
 
 
 def faixa_farol(contagem, total):
+    if not total or total <= 0:
+        return
     segmentos = ""
     for farol in ORDEM_FAROL:
         n = int(contagem.get(farol, 0))
-        if n:
+        if n > 0:
             pct = n / total * 100
             segmentos += (
-                f'<div title="{nome_farol(farol)}: {n} ({pct:.1f}%)" '
+                f'<div title="{escape(nome_farol(farol))}: {n} ({pct:.1f}%)" '
                 f'style="width:{pct:.2f}%;background:{CORES_FAROL[farol]}"></div>'
             )
     st.markdown(f'<div class="faixa">{segmentos}</div>', unsafe_allow_html=True)
+
 
 
 MESES_PT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
@@ -303,34 +542,44 @@ def nome_farol(farol):
 
 
 def base_layout(fig, altura, legenda_y=-0.18):
+    """Aplica o mesmo acabamento e comportamento aos gráficos Plotly."""
     t = tema_ativo()
     fig.update_layout(
-        template=t["template"],
-        height=altura,
-        margin=dict(l=8, r=8, t=10, b=8),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
+        template=t["template"], height=altura,
+        margin=dict(l=12, r=12, t=18, b=18),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Inter, Segoe UI, sans-serif", color=t["texto2"], size=12),
-        hoverlabel=dict(bgcolor=t["cartao"], bordercolor=t["borda"], align="left",
-                        font=dict(size=12, color=t["texto"])),
-        legend=dict(orientation="h", y=legenda_y, x=0, itemsizing="constant",
-                    font=dict(size=11, color=t["texto2"]), title_text=""),
+        hoverlabel=dict(
+            bgcolor=t["cartao"], bordercolor=t["borda"], align="left",
+            font=dict(size=12, color=t["texto"]),
+        ),
+        legend=dict(
+            orientation="h", y=legenda_y, x=0, itemsizing="constant",
+            font=dict(size=10, color=t["texto2"]), title_text="",
+            bgcolor="rgba(0,0,0,0)",
+        ),
         modebar=dict(bgcolor="rgba(0,0,0,0)", color=t["hint"], activecolor=t["acento"]),
+        hovermode="closest",
+        uniformtext_minsize=9,
+        uniformtext_mode="hide",
     )
     return fig
 
 
+
 def estilizar_eixos(fig):
-    """Eixos discretos: sem linhas, sem marcas, grade pontilhada na cor do tema."""
+    """Eixos limpos, grade discreta e tipografia consistente com o tema ativo."""
     t = tema_ativo()
     comum = dict(
-        showline=False, zeroline=False, ticks="",
-        gridcolor=t["grade"], griddash="dot",
-        tickfont=dict(size=11, color=t["texto3"]),
+        showline=False, zeroline=False, ticks="", showspikes=True,
+        spikemode="across", spikesnap="cursor", spikethickness=1,
+        spikecolor=t["borda"], gridcolor=t["grade"], griddash="dot",
+        tickfont=dict(size=10, color=t["texto3"]),
         title_font=dict(size=11, color=t["texto3"]),
     )
     fig.update_xaxes(showgrid=False, **comum)
     fig.update_yaxes(showgrid=True, **comum)
+
 
 
 # ─────────────────────────────────────────────────────────────
@@ -344,44 +593,34 @@ def grafico_farol(dados, chave, regras=None):
         return
 
     total = int(resumo.sum())
-    pct_prazo = int(resumo.get("DENTRO DO PRAZO", 0)) / total * 100
+    no_prazo = int(resumo.get("DENTRO DO PRAZO", 0))
+    pct_prazo = no_prazo / total * 100 if total else 0
     t = tema_ativo()
     nomes = [nome_farol(f) for f in resumo.index]
-    fig = go.Figure(
-        go.Pie(
-            labels=[f"{n} · {v}" for n, v in zip(nomes, resumo.values)],
-            values=list(resumo.values),
-            hole=0.7,
-            sort=False,
-            direction="clockwise",
-            marker=dict(
-                colors=[CORES_FAROL[f] for f in resumo.index],
-                line=dict(color=t["cartao"], width=3),
-            ),
-            textinfo="percent",
-            textposition="outside",
-            textfont=dict(size=11, color=t["texto2"]),
-            automargin=True,
-            customdata=[[n, (regras or {}).get(f, "")] for n, f in zip(nomes, resumo.index)],
-            hovertemplate=(
-                "<b>%{customdata[0]}</b><br>Processos: %{value}<br>"
-                "Participação: %{percent}"
-                + ("<br><i>Regra: %{customdata[1]}</i>" if regras else "")
-                + "<extra></extra>"
-            ),
-        )
-    )
+    fig = go.Figure(go.Pie(
+        labels=nomes, values=list(resumo.values), hole=0.74, sort=False,
+        direction="clockwise", rotation=270,
+        marker=dict(colors=[CORES_FAROL[f] for f in resumo.index],
+                    line=dict(color=t["cartao"], width=4)),
+        textinfo="percent", textposition="inside",
+        textfont=dict(size=10, color="#FFFFFF"),
+        hovertemplate=("<b>%{label}</b><br>Processos: %{value:,}<br>Participação: %{percent}"
+                       + ("<br><i>Regra: %{customdata}</i>" if regras else "")
+                       + "<extra></extra>"),
+        customdata=[(regras or {}).get(f, "") for f in resumo.index] if regras else None,
+    ))
     fig.add_annotation(
-        text=(
-            f"<b><span style='font-size:30px;color:{t['texto']}'>{total}</span></b><br>"
-            f"<span style='font-size:12px;color:{t['texto3']}'>processos</span><br>"
-            f"<span style='font-size:12px;color:{CORES_FAROL['DENTRO DO PRAZO']}'>{pct_prazo:.0f}% no prazo</span>"
-        ),
-        x=0.5, y=0.5, showarrow=False,
+        text=(f"<span style='font-size:29px;color:{t['texto']};font-weight:750'>{total:,}</span>"
+              f"<br><span style='font-size:11px;color:{t['texto3']}'>processos</span>"
+              f"<br><span style='font-size:12px;color:{CORES_FAROL['DENTRO DO PRAZO']};font-weight:700'>{pct_prazo:.0f}% no prazo</span>"),
+        x=0.5, y=0.5, showarrow=False, align="center",
     )
-    base_layout(fig, 340, legenda_y=-0.1)
+    base_layout(fig, 330, legenda_y=-0.12)
+    fig.update_layout(showlegend=True, legend=dict(orientation="h", y=-0.06, x=0.5, xanchor="center"),
+                      margin=dict(l=10, r=10, t=8, b=40))
     st.plotly_chart(fig, use_container_width=True, key=f"farol_{chave}",
                     config=PLOTLY_CONFIG, theme=None)
+
 
 
 def grafico_duracao(dados, chave, marcos=((1, "1 dia"), (3, "3 dias")), usar_faixas=True):
@@ -394,38 +633,35 @@ def grafico_duracao(dados, chave, marcos=((1, "1 dia"), (3, "3 dias")), usar_fai
     base["Farol"] = base["Farol da etapa"].map(nome_farol)
     cores = {nome_farol(k): v for k, v in CORES_FAROL.items()}
     fig = px.histogram(
-        base, x="Dias", color="Farol", nbins=24,
-        color_discrete_map=cores,
+        base, x="Dias", color="Farol", nbins=26, color_discrete_map=cores,
         category_orders={"Farol": [nome_farol(f) for f in ORDEM_FAROL]},
-        labels={"Dias": "Dias decorridos"},
+        labels={"Dias": "Dias decorridos", "count": "Processos"},
+        opacity=.94,
     )
     fig.update_traces(
-        marker_line_color=t["cartao"], marker_line_width=1.5,
-        hovertemplate="Faixa: %{x} dias<br>Processos: %{y}<extra>%{fullData.name}</extra>",
+        marker_line_color=t["cartao"], marker_line_width=1.2,
+        hovertemplate="<b>%{fullData.name}</b><br>Faixa: %{x} dias<br>Processos: %{y}<extra></extra>",
     )
-
-    # Faixas de fundo que representam as zonas da regra
-    topo = max(float(base["Dias"].max()), 3.5) * 1.05
+    topo = max(float(base["Dias"].max()), 3.5) * 1.08
     faixas = ((0, 1, "DENTRO DO PRAZO"), (1, 3, "ATENÇÃO"), (3, topo, "ATRASO")) if usar_faixas else ()
     for x0, x1, farol in faixas:
-        fig.add_vrect(x0=x0, x1=x1, fillcolor=CORES_FAROL[farol], opacity=0.08,
+        fig.add_vrect(x0=x0, x1=x1, fillcolor=CORES_FAROL[farol], opacity=.075,
                       line_width=0, layer="below")
-
     for marco, rotulo in marcos:
         fig.add_vline(x=marco, line_dash="dot", line_color=t["texto3"], line_width=1,
                       annotation_text=rotulo, annotation_position="top left",
-                      annotation_font=dict(size=10, color=t["texto3"]))
+                      annotation_font=dict(size=9, color=t["texto3"]))
     media = float(base["Dias"].mean())
     fig.add_vline(x=media, line_dash="dash", line_color=t["destaque"], line_width=2,
                   annotation_text=f"Média {media:.1f} d", annotation_position="top right",
-                  annotation_font=dict(size=11, color=t["destaque"]))
-
-    base_layout(fig, 340, legenda_y=-0.22)
+                  annotation_font=dict(size=10, color=t["destaque"]))
+    base_layout(fig, 340, legenda_y=-.22)
     estilizar_eixos(fig)
-    fig.update_layout(barmode="stack", bargap=0.06, hovermode="closest",
+    fig.update_layout(barmode="stack", bargap=.09, hovermode="x unified",
                       xaxis_title="Duração (dias)", yaxis_title="Quantidade de processos")
     st.plotly_chart(fig, use_container_width=True, key=f"duracao_{chave}",
                     config=PLOTLY_CONFIG, theme=None)
+
 
 
 def grafico_evolucao(dados, coluna_inicio, chave):
@@ -434,83 +670,66 @@ def grafico_evolucao(dados, coluna_inicio, chave):
         aviso("Sem datas de início para montar a evolução.")
         return
 
-    base["Mês"] = base[coluna_inicio].dt.to_period("M").dt.to_timestamp()
+    base["Mês"] = pd.to_datetime(base[coluna_inicio], errors="coerce").dt.to_period("M").dt.to_timestamp()
+    base = base.dropna(subset=["Mês"])
+    if base.empty:
+        aviso("Não há datas válidas para montar a evolução.")
+        return
     tabela = base.groupby(["Mês", "Farol da etapa"]).size().unstack(fill_value=0)
     tabela = tabela.reindex(columns=[f for f in ORDEM_FAROL if f in tabela.columns])
     total = tabela.sum(axis=1)
-    if "DENTRO DO PRAZO" in tabela.columns:
-        pct_prazo = tabela["DENTRO DO PRAZO"] / total * 100
-    else:
-        pct_prazo = pd.Series(0.0, index=tabela.index)
+    pct_prazo = (tabela["DENTRO DO PRAZO"] / total * 100
+                 if "DENTRO DO PRAZO" in tabela.columns else pd.Series(0.0, index=tabela.index))
 
     t = tema_ativo()
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     for farol in tabela.columns:
-        fig.add_trace(
-            go.Bar(
-                x=tabela.index, y=tabela[farol], name=nome_farol(farol),
-                marker=dict(color=CORES_FAROL[farol], line=dict(color=t["cartao"], width=1)),
-                hovertemplate=f"{nome_farol(farol)}: %{{y}}<extra></extra>",
-            ),
-            secondary_y=False,
-        )
-    # Total de cada mês, no topo da barra
-    fig.add_trace(
-        go.Scatter(
-            x=tabela.index, y=total, mode="text",
-            text=[str(int(v)) for v in total], textposition="top center",
-            textfont=dict(size=11, color=t["texto3"]),
-            showlegend=False, hoverinfo="skip",
-        ),
-        secondary_y=False,
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=tabela.index, y=pct_prazo, name="% dentro do prazo",
-            mode="lines+markers",
-            line=dict(color=t["destaque"], width=2.5, shape="spline"),
-            marker=dict(size=7, color=t["cartao"], line=dict(color=t["destaque"], width=2)),
-            hovertemplate="% dentro do prazo: %{y:.1f}%<extra></extra>",
-        ),
-        secondary_y=True,
-    )
+        fig.add_trace(go.Bar(
+            x=tabela.index, y=tabela[farol], name=nome_farol(farol),
+            marker=dict(color=CORES_FAROL[farol], line=dict(color=t["cartao"], width=1)),
+            hovertemplate=f"<b>{nome_farol(farol)}</b>: %{{y}}<extra></extra>",
+        ), secondary_y=False)
+    fig.add_trace(go.Scatter(
+        x=tabela.index, y=total, mode="text", text=[str(int(v)) for v in total],
+        textposition="top center", textfont=dict(size=10, color=t["texto3"]),
+        showlegend=False, hoverinfo="skip",
+    ), secondary_y=False)
+    fig.add_trace(go.Scatter(
+        x=tabela.index, y=pct_prazo, name="% dentro do prazo", mode="lines+markers",
+        line=dict(color=t["destaque"], width=2.8, shape="spline"),
+        marker=dict(size=7, color=t["cartao"], line=dict(color=t["destaque"], width=2)),
+        hovertemplate="% dentro do prazo: %{y:.1f}%<extra></extra>",
+    ), secondary_y=True)
 
-    base_layout(fig, 420, legenda_y=-0.36)
+    base_layout(fig, 390, legenda_y=-.28)
     estilizar_eixos(fig)
-    fig.update_layout(barmode="stack", bargap=0.35, hovermode="x unified",
-                      margin=dict(l=8, r=8, t=46, b=8))
-    fig.update_yaxes(title_text="Processos", range=[0, float(total.max()) * 1.18],
-                     secondary_y=False)
+    fig.update_layout(barmode="stack", bargap=.32, hovermode="x unified",
+                      margin=dict(l=10, r=10, t=48, b=12))
+    fig.update_yaxes(title_text="Processos", range=[0, max(float(total.max()) * 1.18, 1)], secondary_y=False)
     fig.update_yaxes(title_text="% dentro do prazo", range=[0, 105], ticksuffix="%",
                      showgrid=False, secondary_y=True)
 
     eixo_x = dict(
-        hoverformat="%m/%Y",
-        rangeslider=dict(visible=False),
-        rangeselector=dict(
-            buttons=[
-                dict(count=3, label="3 meses", step="month", stepmode="backward"),
-                dict(count=6, label="6 meses", step="month", stepmode="backward"),
-                dict(count=1, label="1 ano", step="year", stepmode="backward"),
-                dict(step="all", label="Tudo"),
-            ],
-            x=0, xanchor="left", y=1.03, yanchor="bottom",
-            bgcolor=t["cartao2"], activecolor=t["acento_suave"],
-            bordercolor=t["borda"], borderwidth=1,
-            font=dict(size=11, color=t["texto2"]),
-        ),
-
+        hoverformat="%m/%Y", rangeslider=dict(visible=False),
+        rangeselector=dict(buttons=[
+            dict(count=3, label="3 meses", step="month", stepmode="backward"),
+            dict(count=6, label="6 meses", step="month", stepmode="backward"),
+            dict(count=1, label="1 ano", step="year", stepmode="backward"),
+            dict(step="all", label="Tudo"),
+        ], x=0, xanchor="left", y=1.03, yanchor="bottom",
+           bgcolor=t["cartao2"], activecolor=t["acento_suave"],
+           bordercolor=t["borda"], borderwidth=1,
+           font=dict(size=10, color=t["texto2"])),
     )
     if len(tabela) <= 18:
-        eixo_x.update(
-            tickmode="array", tickvals=list(tabela.index),
-            ticktext=[f"{MESES_PT[d.month - 1]}/{str(d.year)[2:]}" for d in tabela.index],
-        )
+        eixo_x.update(tickmode="array", tickvals=list(tabela.index),
+                      ticktext=[f"{MESES_PT[d.month - 1]}/{str(d.year)[2:]}" for d in tabela.index])
     else:
         eixo_x.update(tickformat="%m/%y")
     fig.update_xaxes(**eixo_x)
     st.plotly_chart(fig, use_container_width=True, key=f"evolucao_{chave}",
                     config=PLOTLY_CONFIG, theme=None)
+
 
 
 # ─────────────────────────────────────────────────────────────
@@ -523,54 +742,91 @@ def chip(texto, cor):
     )
 
 
+def _cor_farol(valor):
+    chave = str(valor).strip().upper()
+    return CORES_FAROL.get(chave, "#8795A5")
+
+
+def _valor_exibicao(valor):
+    if valor is None or (not isinstance(valor, (list, tuple, dict)) and pd.isna(valor)):
+        return "—"
+    if hasattr(valor, "strftime"):
+        return valor.strftime("%d/%m/%Y")
+    if isinstance(valor, float) and valor.is_integer():
+        return f"{int(valor):,}".replace(",", ".")
+    return str(valor)
+
+
 def tabela_html(dados, colunas, inicio, fim, dias_max):
-    cabecalho = "".join(f"<th>{escape(c)}</th>" for c in colunas)
-    cor_situacao = {"Concluída": tema_ativo()["acento"], "Em andamento": CORES_FAROL["ATENÇÃO"]}
+    """Gera uma grade HTML responsiva, com cabeçalho fixo e cores do tema ativo."""
+    if dados is None or dados.empty:
+        return '<div class="data-table-card"><div class="data-table-empty">Nenhum registro para exibir.</div></div>'
+
+    cabecalho = "".join(f'<th scope="col">{escape(str(c))}</th>' for c in colunas)
     linhas = []
     for _, r in dados.iterrows():
-        farol = r.get("Farol da etapa")
+        farol = str(r.get("Farol da etapa", "")).strip().upper()
+        cor_farol = _cor_farol(farol)
         celulas = []
         for c in colunas:
-            v = r[c]
-            if c in (inicio, fim):
-                txt = v.strftime("%d/%m/%Y") if pd.notna(v) else "—"
-                celulas.append(f"<td>{txt}</td>")
-            elif c == "Dias":
-                if pd.isna(v):
-                    celulas.append("<td>—</td>")
-                else:
-                    pct = min(float(v) / dias_max * 100, 100)
-                    cor = CORES_FAROL.get(farol, "#8795A5")
-                    celulas.append(
-                        f'<td><div class="dias"><span>{v:.1f} d</span>'
-                        f'<div class="barra"><i style="width:{pct:.0f}%;background:{cor}"></i></div></div></td>'
-                    )
-            elif c == "Farol da etapa":
-                celulas.append(f"<td>{chip(str(v).capitalize(), CORES_FAROL.get(v, '#8795A5'))}</td>")
+            valor = r.get(c)
+            exibicao = _valor_exibicao(valor)
+            seguro = escape(exibicao)
+            title = f' title="{escape(exibicao, quote=True)}"' if exibicao != "—" else ""
+
+            if c == "Farol da etapa":
+                label = escape(exibicao.capitalize())
+                celulas.append(
+                    f'<td{title}><span class="status-pill" style="color:{cor_farol};'
+                    f'background:{cor_farol}14;border-color:{cor_farol}48">'
+                    f'<i class="status-dot" style="background:{cor_farol}"></i>{label}</span></td>'
+                )
             elif c == "Situação da etapa":
-                celulas.append(f"<td>{chip(str(v), cor_situacao.get(v, '#8795A5'))}</td>")
+                norm = _normalizar_texto(exibicao)
+                cor = CORES_FAROL["DENTRO DO PRAZO"] if "conclu" in norm else CORES_FAROL["ATENÇÃO"]
+                celulas.append(
+                    f'<td{title}><span class="status-pill" style="color:{cor};'
+                    f'background:{cor}14;border-color:{cor}48">'
+                    f'<i class="status-dot" style="background:{cor}"></i>{seguro}</span></td>'
+                )
+            elif c == "Dias":
+                if exibicao == "—":
+                    celulas.append('<td class="cell-muted">—</td>')
+                else:
+                    try:
+                        numero = float(valor)
+                        pct = max(0.0, min(100.0, numero / max(float(dias_max or 1), 1.0) * 100))
+                        dias_txt = f"{numero:.1f} d"
+                    except (TypeError, ValueError):
+                        pct, dias_txt = 0.0, seguro
+                    celulas.append(
+                        f'<td{title}><div class="days-cell"><span class="days-value">{escape(dias_txt)}</span>'
+                        f'<span class="days-track"><i style="width:{pct:.0f}%;background:{cor_farol}"></i></span>'
+                        f'</div></td>'
+                    )
+            elif c in (inicio, fim):
+                celulas.append(f'<td class="cell-muted"{title}>{seguro}</td>')
+            elif c in ("Nº Processo", "Ref.Cliente", "Status"):
+                celulas.append(f'<td class="cell-primary"{title}>{seguro}</td>')
             else:
-                txt = "—" if pd.isna(v) else escape(str(v))
-                celulas.append(f"<td>{txt}</td>")
+                celulas.append(f'<td{title}>{seguro}</td>')
         linhas.append("<tr>" + "".join(celulas) + "</tr>")
+
     return (
-        '<div class="tabela-wrap"><table><thead><tr>' + cabecalho + "</tr></thead><tbody>"
-        + "".join(linhas) + "</tbody></table></div>"
+        '<div class="data-table-card"><div class="data-table-scroll">'
+        '<table class="data-table"><thead><tr>' + cabecalho + '</tr></thead><tbody>'
+        + "".join(linhas) + '</tbody></table></div>'
+        f'<div class="data-table-footnote"><span>Exibindo {len(dados):,} registro(s) nesta página</span>'
+        '<span>Role horizontalmente para visualizar todas as colunas</span></div></div>'
     )
 
 
 def tabela_detalhada(dados, inicio, fim, chave, nome_arquivo):
-    ordens = {
-        "Maior tempo decorrido": ("Dias", False),
-        "Menor tempo decorrido": ("Dias", True),
-        "Início mais recente": (inicio, False),
-        "Início mais antigo": (inicio, True),
-    }
-    c1, _ = st.columns([1, 3])
-    with c1:
-        escolha = st.selectbox("Ordenar por", list(ordens), key=f"ordem_{chave}")
-    coluna_ordem, crescente = ordens[escolha]
-    dados = dados.sort_values(coluna_ordem, ascending=crescente, na_position="last")
+    """Tabela analítica customizada com busca, ordenação, paginação e exportação."""
+    st.markdown('<div class="secao">Detalhamento dos processos</div>', unsafe_allow_html=True)
+    if dados is None or dados.empty:
+        aviso("Nenhum processo encontrado com os filtros selecionados.")
+        return
 
     preferidas = [
         "Status", "Ref.Cliente", "Nº Processo", "Responsável", "Planta",
@@ -578,34 +834,129 @@ def tabela_detalhada(dados, inicio, fim, chave, nome_arquivo):
         "Farol da etapa", "Situação da etapa",
     ]
     colunas = [c for c in preferidas if c in dados.columns]
-    dias_max = float(dados["Dias"].max()) if dados["Dias"].notna().any() else 1.0
-    dias_max = max(dias_max, 1.0)
+    if not colunas:
+        colunas = list(dados.columns)
 
-    exibir = dados.head(MAX_LINHAS_TABELA)
-    st.markdown(tabela_html(exibir, colunas, inicio, fim, dias_max), unsafe_allow_html=True)
-    if len(dados) > MAX_LINHAS_TABELA:
-        st.caption(f"Exibindo {MAX_LINHAS_TABELA} de {len(dados)} processos. "
-                   "O CSV exportado contém todos.")
+    # Busca global sobre os campos disponíveis no detalhamento.
+    c_busca, c_ordem, c_tamanho = st.columns([2.2, 1.45, 1.05])
+    with c_busca:
+        busca = st.text_input("Busca rápida", key=f"busca_tabela_{chave}",
+                              placeholder="Digite referência, processo, responsável...")
+    ordens = {
+        "Maior tempo decorrido": ("Dias", False),
+        "Menor tempo decorrido": ("Dias", True),
+        "Início mais recente": (inicio, False),
+        "Início mais antigo": (inicio, True),
+    }
+    opcoes_ordem = [nome for nome, (col, _) in ordens.items() if col in dados.columns]
+    with c_ordem:
+        escolha = st.selectbox("Ordenar por", opcoes_ordem or ["Ordem original"],
+                               key=f"ordem_{chave}")
+    with c_tamanho:
+        tamanho = st.selectbox("Linhas por página", [25, 50, 100, 250], index=1,
+                               key=f"tamanho_tabela_{chave}")
 
-    exportar = dados.drop(columns=["_data_calculo"], errors="ignore")
-    csv = exportar.to_csv(index=False, sep=";", encoding="utf-8-sig").encode("utf-8-sig")
-    st.download_button(
-        "⬇️ Exportar dados filtrados (CSV)", csv,
-        file_name=nome_arquivo, mime="text/csv",
-        key=f"download_{chave}",
-    )
+    filtrado = dados.copy()
+    if busca.strip():
+        termo = busca.strip()
+        mascara = filtrado[colunas].astype(str).apply(
+            lambda serie: serie.str.contains(termo, case=False, na=False, regex=False)
+        ).any(axis=1)
+        filtrado = filtrado.loc[mascara]
+    if escolha in ordens:
+        coluna_ordem, crescente = ordens[escolha]
+        try:
+            filtrado = filtrado.sort_values(coluna_ordem, ascending=crescente, na_position="last", kind="stable")
+        except (TypeError, ValueError):
+            filtrado = filtrado.sort_values(coluna_ordem, ascending=crescente, na_position="last", key=lambda s: s.astype(str))
+
+    # O usuário escolhe quais campos quer manter visíveis.
+    chave_colunas = f"colunas_tabela_{chave}"
+    if chave_colunas in st.session_state:
+        st.session_state[chave_colunas] = [c for c in st.session_state[chave_colunas] if c in colunas]
+    with st.expander("Personalizar colunas", expanded=False):
+        visiveis = st.multiselect("Campos exibidos", colunas, default=colunas,
+                                  key=chave_colunas, help="A tabela mantém a ordenação e a busca nos campos selecionados.")
+    if not visiveis:
+        visiveis = colunas
+
+    total = len(filtrado)
+    paginas = max(1, (total + tamanho - 1) // tamanho)
+    chave_pagina = f"pagina_tabela_{chave}"
+    if chave_pagina not in st.session_state or int(st.session_state[chave_pagina]) > paginas:
+        st.session_state[chave_pagina] = 1
+    c_info, c_pagina = st.columns([3, 1])
+    with c_info:
+        st.caption(f"**{total:,}** processo(s) encontrado(s) · {len(dados):,} após os filtros da página")
+    with c_pagina:
+        pagina = st.selectbox("Página", list(range(1, paginas + 1)), key=chave_pagina,
+                              format_func=lambda n: f"{n} de {paginas}")
+
+    inicio_linha = (pagina - 1) * tamanho
+    pagina_df = filtrado.iloc[inicio_linha:inicio_linha + tamanho][visiveis].copy()
+    # A grade é HTML próprio para manter o mesmo acabamento da prévia em qualquer versão do Streamlit.
+    pagina_df = filtrado.iloc[inicio_linha:inicio_linha + tamanho][visiveis].copy()
+    if "Dias" in pagina_df.columns:
+        serie_dias = pd.to_numeric(pagina_df["Dias"], errors="coerce")
+        dias_max = float(serie_dias.max()) if serie_dias.notna().any() else 1.0
+    else:
+        dias_max = 1.0
+    st.markdown(tabela_html(pagina_df, visiveis, inicio, fim, dias_max), unsafe_allow_html=True)
+
+    csv = filtrado.drop(columns=["_data_calculo"], errors="ignore").to_csv(
+        index=False, sep=";", encoding="utf-8-sig"
+    ).encode("utf-8-sig")
+    c_download, c_rodape = st.columns([1.35, 3])
+    with c_download:
+        st.download_button(
+            "↓ Exportar resultado (CSV)", csv, file_name=nome_arquivo,
+            mime="text/csv", key=f"download_{chave}", use_container_width=True,
+        )
+    with c_rodape:
+        st.caption("Dica: use a lupa no cabeçalho da tabela para localizar valores, arraste as colunas para reorganizar e clique nos títulos para ordenar.")
+
 
 
 # ─────────────────────────────────────────────────────────────
 # Blocos de página reutilizáveis: cabeçalho e barra de filtros
 # ─────────────────────────────────────────────────────────────
+def _tematizar_figura_plotly(fig):
+    """Reaplica a paleta da sessão a qualquer figura Plotly, inclusive criada nas páginas."""
+    t = tema_ativo()
+    fig.update_layout(
+        template=t["template"], paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, Segoe UI, sans-serif", color=t["texto2"], size=12),
+        hoverlabel=dict(bgcolor=t["cartao"], bordercolor=t["borda"], font=dict(color=t["texto"])),
+        legend=dict(font=dict(color=t["texto2"]), bgcolor="rgba(0,0,0,0)"),
+        modebar=dict(bgcolor="rgba(0,0,0,0)", color=t["hint"], activecolor=t["acento"]),
+    )
+    fig.update_xaxes(color=t["texto3"], gridcolor=t["grade"], linecolor=t["borda"], zerolinecolor=t["borda"])
+    fig.update_yaxes(color=t["texto3"], gridcolor=t["grade"], linecolor=t["borda"], zerolinecolor=t["borda"])
+    return fig
+
+
+def _instalar_tema_plotly_global():
+    """Intercepta st.plotly_chart para garantir a paleta ativa em gráficos de qualquer página."""
+    if getattr(st, "_savoy_plotly_theme_installed", False):
+        return
+    original = st.plotly_chart
+
+    def _plotly_chart_com_tema(figure_or_data, *args, **kwargs):
+        if isinstance(figure_or_data, go.Figure):
+            _tematizar_figura_plotly(figure_or_data)
+            kwargs["theme"] = None
+        return original(figure_or_data, *args, **kwargs)
+
+    st.plotly_chart = _plotly_chart_com_tema
+    st._savoy_plotly_theme_installed = True
+
+
 def aplicar_tema():
-    """Chame UMA vez no app.py, logo depois de criar o menu lateral.
-    Aplica o tema claro/escuro em todo o app (todas as páginas, inclusive a Home)
-    e coloca o botão de alternar na barra lateral."""
+    """Aplica o tema global, alternador, tematização automática de Plotly e controles."""
+    _instalar_tema_plotly_global()
     escuro = bool(st.session_state.get("tema_escuro", False))
     st.sidebar.button(
-        "☀️ Modo claro" if escuro else "🌙 Modo escuro",
+        "☀️  Alternar para tema claro" if escuro else "☾  Alternar para tema escuro",
         key="botao_tema_global", on_click=alternar_tema,
         use_container_width=True,
     )
@@ -613,86 +964,169 @@ def aplicar_tema():
     st.session_state["_tema_global"] = True
 
 
+
 def cabecalho(titulo, subtitulo, chave="topo"):
-    """CSS do tema + botão claro/escuro + cabeçalho com o logo. Chamar no início de cada página."""
-    if not st.session_state.get("_tema_global"):  # app.py não chamou aplicar_tema(): a página cuida do tema
+    """Cabeçalho institucional comum a todas as páginas do dashboard."""
+    _instalar_tema_plotly_global()
+    if not st.session_state.get("_tema_global"):
         escuro = bool(st.session_state.get("tema_escuro", False))
-        _, col_tema = st.columns([4, 1])
+        _, col_tema = st.columns([5, 1])
         with col_tema:
             st.button(
-                "☀️ Modo claro" if escuro else "🌙 Modo escuro",
+                "☀️ Tema claro" if escuro else "☾ Tema escuro",
                 key=f"botao_tema_{chave}", on_click=alternar_tema,
                 use_container_width=True,
             )
         st.markdown(gerar_css(tema_ativo()), unsafe_allow_html=True)
 
-    agora = datetime.now().strftime("%d/%m/%Y %H:%M")
+    agora = datetime.now().strftime("%d/%m/%Y · %H:%M")
     st.markdown(
         html_limpo(f"""
         <div class="prontidao-hero">
           <div class="hero-marca">
             {logo_html()}
             <div>
-            <h1>{titulo}</h1>
-            <p>{subtitulo}</p>
+              <div class="hero-eyebrow">Pibernat · Gestão de Importação</div>
+              <h1>{escape(str(titulo))}</h1>
+              <p>{escape(str(subtitulo))}</p>
             </div>
           </div>
-          <div class="hero-chip">Atualizado em {agora}</div>
+          <div class="hero-side">
+            <div class="hero-chip"><span class="hero-dot"></span> PAINEL OPERACIONAL</div>
+            <div class="hero-updated">ATUALIZADO EM {agora}</div>
+          </div>
         </div>"""),
         unsafe_allow_html=True,
     )
 
 
+
 def barra_filtros(dados, coluna_inicio, chave):
-    """Barra de filtros padrão. Devolve o DataFrame filtrado.
-    Exige as colunas "Farol da etapa" e "Situação da etapa" em `dados`."""
+    """Filtros padrão + filtros avançados; devolve o DataFrame filtrado sem alterar a origem."""
+    if dados is None or dados.empty:
+        aviso("Não há dados disponíveis para aplicar filtros.")
+        return dados.copy() if dados is not None else pd.DataFrame()
+
+    st.session_state["_pagina_filtros_ativa"] = str(chave)
+    state_farol_card = f"_farol_card_filtro_{chave}"
+    selecao_card = st.session_state.get(state_farol_card)
+    validas = dados[coluna_inicio].dropna() if coluna_inicio in dados.columns else pd.Series(dtype="datetime64[ns]")
     dmin = dmax = None
-    with st.container(border=True):
-        f1, f2, f3, f4, f5 = st.columns([1.3, 1.3, 1.5, 1, 1.5])
-        with f1:
-            referencia = st.text_input(
-                "Referência do cliente", key=f"ref_{chave}", placeholder="Buscar referência..."
-            ).strip()
-        with f2:
-            processo = st.text_input(
-                "Nº do processo", key=f"proc_{chave}", placeholder="Buscar processo..."
-            ).strip()
-        with f3:
-            opcoes = [x for x in ORDEM_FAROL if x in dados["Farol da etapa"].unique()]
-            farois = st.multiselect(
-                "Farol", opcoes, key=f"farol_filtro_{chave}", placeholder="Todos os faróis"
+    chaves_widget = [
+        f"ref_{chave}", f"proc_{chave}", f"farol_filtro_{chave}",
+        f"situacao_{chave}", f"periodo_{chave}",
+    ]
+    colunas_avancadas = [c for c in ("Responsável", "Planta", "Modal", "Categoria", "Exportador", "Status") if c in dados.columns]
+    chaves_widget.extend(f"avancado_{chave}_{c.lower().replace(' ', '_')}" for c in colunas_avancadas)
+
+    def _limpar_filtros():
+        for k in chaves_widget:
+            st.session_state.pop(k, None)
+        st.session_state.pop(state_farol_card, None)
+
+    if selecao_card:
+        rotulo_card = ", ".join(selecao_card.get("valores", [])) or "Todos os processos"
+        cor_ativa = CORES_FAROL.get(selecao_card.get("valores", [""])[0], "#2468B4") if selecao_card.get("tipo") == "farol" else "#2468B4"
+        try:
+            r, g, b = tuple(int(cor_ativa[i:i+2], 16) for i in (1, 3, 5))
+        except Exception:
+            r, g, b = (36, 104, 180)
+        st.markdown(
+            f"<style>.stApp{{background-image:radial-gradient(ellipse at 88% 6%,rgba({r},{g},{b},.17),transparent 38%),linear-gradient(180deg,__fundo__,__fundo__);}}</style>".replace("__fundo__", tema_ativo()["fundo"]),
+            unsafe_allow_html=True,
+        )
+        info_card, limpar_card = st.columns([5, 1])
+        with info_card:
+            st.markdown(
+                f'<div class="aviso aviso-info">✦ <b>Filtro aplicado pelo indicador:</b> {escape(rotulo_card)} · gráficos, indicadores e tabela foram atualizados.</div>',
+                unsafe_allow_html=True,
             )
+        with limpar_card:
+            if st.button("Remover", key=f"remover_card_filtro_{chave}", use_container_width=True):
+                st.session_state.pop(state_farol_card, None)
+                st.rerun()
+
+    with st.container(border=True):
+        topo1, topo2 = st.columns([4, 1])
+        with topo1:
+            st.markdown("<div class='card-titulo'>Filtros de análise</div><div class='card-sub'>Refine os processos e atualize os indicadores desta página em tempo real.</div>", unsafe_allow_html=True)
+        with topo2:
+            st.button("↺ Limpar filtros", key=f"limpar_filtros_{chave}",
+                      on_click=_limpar_filtros, use_container_width=True)
+
+        f1, f2, f3, f4, f5 = st.columns([1.35, 1.35, 1.45, 1.05, 1.55])
+        with f1:
+            referencia = st.text_input("Referência do cliente", key=f"ref_{chave}",
+                                       placeholder="Buscar referência...").strip()
+        with f2:
+            processo = st.text_input("Nº do processo", key=f"proc_{chave}",
+                                     placeholder="Buscar processo...").strip()
+        with f3:
+            opcoes = [x for x in ORDEM_FAROL if x in dados["Farol da etapa"].dropna().unique()]
+            farois = st.multiselect("Farol", opcoes, key=f"farol_filtro_{chave}",
+                                    placeholder="Todos os faróis")
         with f4:
             situacao = st.selectbox("Situação", ["Todas", "Em andamento", "Concluída"],
                                     key=f"situacao_{chave}")
         with f5:
-            validas = dados[coluna_inicio].dropna()
             periodo = None
             if not validas.empty:
-                dmin, dmax = validas.min().date(), validas.max().date()
+                dmin, dmax = pd.to_datetime(validas).min().date(), pd.to_datetime(validas).max().date()
                 periodo = st.date_input(
-                    "Período (início da etapa)", value=(dmin, dmax),
-                    min_value=dmin, max_value=dmax, key=f"periodo_{chave}",
-                    format="DD/MM/YYYY",
+                    "Período de início", value=(dmin, dmax), min_value=dmin,
+                    max_value=dmax, key=f"periodo_{chave}", format="DD/MM/YYYY",
                 )
+
+        if colunas_avancadas:
+            with st.expander("＋ Filtros avançados", expanded=False):
+                cols = st.columns(min(3, len(colunas_avancadas)))
+                selecoes = {}
+                for i, coluna in enumerate(colunas_avancadas):
+                    opcoes_coluna = sorted(dados[coluna].dropna().astype(str).unique().tolist(), key=str.casefold)
+                    with cols[i % len(cols)]:
+                        selecoes[coluna] = st.multiselect(
+                            coluna, opcoes_coluna,
+                            key=f"avancado_{chave}_{coluna.lower().replace(' ', '_')}",
+                            placeholder=f"Todos: {coluna.lower()}",
+                        )
+        else:
+            selecoes = {}
 
     filtrado = dados.copy()
     if referencia and "Ref.Cliente" in filtrado:
-        filtrado = filtrado[filtrado["Ref.Cliente"].astype(str).str.contains(
-            referencia, case=False, na=False, regex=False)]
+        filtrado = filtrado[filtrado["Ref.Cliente"].astype(str).str.contains(referencia, case=False, na=False, regex=False)]
     if processo and "Nº Processo" in filtrado:
-        filtrado = filtrado[filtrado["Nº Processo"].astype(str).str.contains(
-            processo, case=False, na=False, regex=False)]
+        filtrado = filtrado[filtrado["Nº Processo"].astype(str).str.contains(processo, case=False, na=False, regex=False)]
     if farois:
         filtrado = filtrado[filtrado["Farol da etapa"].isin(farois)]
-    if situacao != "Todas":
+    if situacao != "Todas" and "Situação da etapa" in filtrado.columns:
         filtrado = filtrado[filtrado["Situação da etapa"] == situacao]
     if (periodo and isinstance(periodo, (tuple, list)) and len(periodo) == 2
-            and (periodo[0], periodo[1]) != (dmin, dmax)):
+            and dmin is not None and (periodo[0], periodo[1]) != (dmin, dmax)):
         ini = pd.Timestamp(periodo[0])
-        fim_ = pd.Timestamp(periodo[1]) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+        fim_ = pd.Timestamp(periodo[1]) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
         filtrado = filtrado[filtrado[coluna_inicio].between(ini, fim_)]
+    for coluna, selecionados in selecoes.items():
+        if selecionados:
+            filtrado = filtrado[filtrado[coluna].astype(str).isin(selecionados)]
+
+    if selecao_card:
+        tipo_card = selecao_card.get("tipo")
+        valores_card = selecao_card.get("valores", [])
+        if tipo_card == "farol" and "Farol da etapa" in filtrado.columns:
+            filtrado = filtrado[filtrado["Farol da etapa"].isin(valores_card)]
+        elif tipo_card == "situacao":
+            coluna_situacao = "Situação da etapa" if "Situação da etapa" in filtrado.columns else ("Status" if "Status" in filtrado.columns else None)
+            if coluna_situacao:
+                procurados = {_normalizar_texto(v) for v in valores_card}
+                filtrado = filtrado[filtrado[coluna_situacao].map(_normalizar_texto).isin(procurados)]
+
+    ativos = sum(bool(x) for x in (referencia, processo, farois, situacao != "Todas"))
+    ativos += sum(bool(v) for v in selecoes.values())
+    ativos += int(bool(selecao_card))
+    st.caption(f"{len(filtrado):,} de {len(dados):,} processo(s) · {ativos} grupo(s) de filtros ativo(s)")
     return filtrado
+
 
 
 # ─────────────────────────────────────────────────────────────

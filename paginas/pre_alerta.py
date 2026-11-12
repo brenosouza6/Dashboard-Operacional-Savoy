@@ -293,7 +293,7 @@ def pagina_pre_alerta(df):
         aviso("Não há processos disponíveis para os filtros selecionados.", "atencao")
         return
 
-    abas = st.tabs([c.get("aba") or c["titulo"].replace("Controle de ", "") for c in MEDICOES])
+    abas = st.tabs([c.get("aba") or c["titulo"].replace("Controle de " "") for c in MEDICOES])
     for indice, (aba, config) in enumerate(zip(abas, MEDICOES)):
         with aba:
             _exibir_bloco(df, config, indice)

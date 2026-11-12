@@ -135,7 +135,7 @@ def bloco_medicao(df, titulo, descricao, coluna_inicio, coluna_fim, chave):
 # Página
 # ─────────────────────────────────────────────────────────────
 def pagina_prontidao(df):
-    cabecalho("Prontidão | Gestão de Proformas",
+    cabecalho("Prontidão",
               "Acompanhamento dos prazos de recebimento e conferência das Proformas",
               chave="prontidao")
     if df is None or df.empty:
@@ -143,8 +143,8 @@ def pagina_prontidao(df):
         return
 
     recebimento, conferencia = st.tabs([
-        "Recebimento da Proforma",
-        "Conferência da Proforma",
+        "Controle de Recebimento da Proforma",
+        "Controle de Conferência da Proforma",
     ])
     with recebimento:
         bloco_medicao(

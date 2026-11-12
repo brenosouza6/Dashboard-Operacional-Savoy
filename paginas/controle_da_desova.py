@@ -592,9 +592,9 @@ def pagina_controle_da_desova(df):
         return
 
     antes, depois, realizacao = st.tabs([
-        "01 · Desova Antes da DI",
-        "02 · Solicitação Depois da DI",
-        "03 · Realização da Desova",
+        "Controle da Desova Antes da DI",
+        "Controle de Solicitação Depois da DI",
+        "Controle de Realização da Desova",
     ])
 
     with antes:
