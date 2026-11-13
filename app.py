@@ -60,32 +60,88 @@ dados = carregar_dados()
 
 
 # ==================================================
-# MENU DE NAVEGAÇÃO
+# IDENTIDADE VISUAL E MENU DE NAVEGAÇÃO
 # ==================================================
 
-st.sidebar.title("Dashboard Operacional - Savoy")
+st.markdown("""
+<style>
+[data-testid="stSidebar"] {
+    border-right: 1px solid rgba(150, 150, 150, 0.18);
+}
 
-pagina = st.sidebar.radio(
-    "Etapas",
-    [
-        "Home",
-        "Prontidão",
-        "Pré-Alerta",
-        "Trânsito Internacional",
-        "Numerários",
-        "Controle da Desova",
-        "Armazenagem",
-        "Gestão Aduaneira",
-        "Entrega de Carga",
-        "Conclusão"
+.sidebar-brand {
+    padding: 12px 8px 20px 8px;
+    text-align: center;
+}
+
+.sidebar-brand-title {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    margin-top: 10px;
+}
+
+.sidebar-brand-subtitle {
+    font-size: 10px;
+    letter-spacing: 2px;
+    opacity: 0.65;
+    margin-top: 4px;
+}
+
+.sidebar-divider {
+    border: none;
+    border-top: 1px solid rgba(150, 150, 150, 0.22);
+    margin: 8px 0 18px 0;
+}
+</style>
+""", unsafe_allow_html=True)
+
+pasta_logos = Path(__file__).resolve().parent / "Arquivos png"
+
+logo_savoy = None
+
+if pasta_logos.exists():
+    imagens = [
+        arquivo for arquivo in pasta_logos.iterdir()
+        if arquivo.suffix.lower() in [".png", ".jpg", ".jpeg", ".webp"]
     ]
-)
 
-aplicar_tema()
+    logo_savoy = next(
+        (arquivo for arquivo in imagens
+         if "savoy" in arquivo.stem.lower()),
+        None
+    )
 
-# ==================================================
-# EXIBIÇÃO DAS PÁGINAS
-# ==================================================
+with st.sidebar:
+    if logo_savoy:
+        st.image(str(logo_savoy), use_container_width=True)
+
+    st.markdown("""
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-title">SAVOY</div>
+            <div class="sidebar-brand-subtitle">
+                DASHBOARD OPERACIONAL
+            </div>
+        </div>
+        <hr class="sidebar-divider">
+    """, unsafe_allow_html=True)
+
+    pagina = st.radio(
+        "NAVEGAÇÃO",
+        [
+            "Home",
+            "Prontidão",
+            "Pré-Alerta",
+            "Trânsito Internacional",
+            "Numerários",
+            "Controle da Desova",
+            "Armazenagem",
+            "Gestão Aduaneira",
+            "Entrega de Carga",
+            "Conclusão"
+        ],
+        key="menu_navegacao"
+    )
 
 # ==================================================
 # EXIBIÇÃO DAS PÁGINAS

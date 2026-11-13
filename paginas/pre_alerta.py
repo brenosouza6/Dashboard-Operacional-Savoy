@@ -178,11 +178,17 @@ def _preparar_medicao(df, config, coluna_inicio, coluna_fim):
     dados.loc[dados["Dias"] < 0, "Dias"] = float("nan")
     dados["Dias"] = pd.to_numeric(dados["Dias"], errors="coerce")
 
-    if config.get("modal_especial") and "Modal" in dados.columns:
-        dados["Farol da etapa"] = dados.apply(
-            lambda linha: _classificar_embarque(linha["Dias"], linha["Modal"]),
-            axis=1,
-        )
+    if config.get("modal_especial"):
+        if "Modal" in dados.columns:
+            dados["Farol da etapa"] = dados.apply(
+                lambda linha: _classificar_embarque(linha["Dias"], linha["Modal"]),
+                axis=1,
+            )
+        else:
+            # Sem modalidade não é seguro aplicar faixas genéricas de prazo.
+            dados["Farol da etapa"] = dados["Dias"].apply(
+                lambda dias: "SEM DATA" if pd.isna(dias) else "REVISAR REGRA"
+            )
     else:
         dados["Farol da etapa"] = dados["Dias"].apply(_classificar_dias)
 
@@ -215,32 +221,44 @@ def _exibir_bloco(df, config, indice):
 
     etapa = _preparar_medicao(df, config, coluna_inicio, coluna_fim)
 
-    aviso(f"<b>Instrução da medição:</b> {escape(config['regra'])}", "info")
+    if config.get("modal_especial") and "Modal" not in etapa.columns:
+        aviso(
+            "A coluna Modal não está disponível. Os processos com data calculável "
+            "foram classificados como 'Revisar regra' para evitar aplicar faixas incorretas.",
+            "atencao",
+        )
+
+    aviso(f"Instrução da medição: {config['regra']}", "info")
     filtrado = barra_filtros(etapa, coluna_inicio, chave)
 
-    # ── Indicadores (as mesmas métricas da versão anterior) ──
+    # Todos os indicadores usam o mesmo DataFrame já filtrado, inclusive o filtro aplicado pelos cards.
     contagem = filtrado["Farol da etapa"].value_counts()
     total = len(filtrado)
     dentro = int(contagem.get("DENTRO DO PRAZO", 0))
     atencao = int(contagem.get("ATENÇÃO", 0))
     alerta = int(contagem.get("ALERTA", 0))
     atraso = int(contagem.get("ATRASO", 0))
+    revisar = int(contagem.get("REVISAR REGRA", 0))
+    sem_data = int(contagem.get("SEM DATA", 0))
 
     def pct(n):
         return f"{n / total * 100:.1f}% do total" if total else "—"
 
-    secao("Indicadores da etapa")
-    k = st.columns(5)
+    secao("Indicadores da etapa", "Clique em um farol para filtrar toda a análise; clique novamente para remover o filtro.")
     metricas = [
-        ("Processos", total, "No recorte atual", tema_ativo()["acento"]),
-        ("Dentro do prazo", dentro, pct(dentro), CORES_FAROL["DENTRO DO PRAZO"]),
-        ("Atenção", atencao, pct(atencao), CORES_FAROL["ATENÇÃO"]),
-        ("Alerta", alerta, pct(alerta), CORES_FAROL["ALERTA"]),
-        ("Atraso", atraso, pct(atraso), CORES_FAROL["ATRASO"]),
+        ("Processos", total, "No recorte atual", tema_ativo()["acento"], None),
+        ("Dentro do prazo", dentro, pct(dentro), CORES_FAROL["DENTRO DO PRAZO"], "DENTRO DO PRAZO"),
+        ("Atenção", atencao, pct(atencao), CORES_FAROL["ATENÇÃO"], "ATENÇÃO"),
+        ("Alerta", alerta, pct(alerta), CORES_FAROL["ALERTA"], "ALERTA"),
+        ("Atraso", atraso, pct(atraso), CORES_FAROL["ATRASO"], "ATRASO"),
+        ("Revisar regra", revisar, pct(revisar), CORES_FAROL["REVISAR REGRA"], "REVISAR REGRA"),
+        ("Sem data", sem_data, pct(sem_data), CORES_FAROL["SEM DATA"], "SEM DATA"),
     ]
-    for coluna, metrica in zip(k, metricas):
-        with coluna:
-            cartao(*metrica)
+    for grupo in (metricas[:4], metricas[4:]):
+        colunas = st.columns(len(grupo))
+        for coluna, (titulo, valor, detalhe, cor, farol) in zip(colunas, grupo):
+            with coluna:
+                cartao(titulo, valor, detalhe, cor, farol=farol, chave=chave)
 
     if not total:
         aviso("Nenhum processo encontrado para esta medição com os filtros selecionados. "
@@ -271,12 +289,10 @@ def _exibir_bloco(df, config, indice):
         titulo_card("Evolução mensal", "Processos por farol (barras) e % dentro do prazo (linha)")
         grafico_evolucao(filtrado, coluna_inicio, chave)
 
-    revisar = int(contagem.get("REVISAR REGRA", 0))
     if revisar:
         aviso(f"{revisar} processo(s) estão em 'Revisar regra' (faixa de exatamente 1 dia ou "
               "modal não reconhecido). A regra de negócio precisa ser confirmada.", "atencao")
 
-    secao("Detalhamento dos processos", "Cada linha mostra o farol e o tempo decorrido da etapa")
     tabela_detalhada(filtrado, coluna_inicio, coluna_fim, chave,
                      f"pre_alerta_medicao_{indice + 1}.csv")
 
@@ -293,7 +309,7 @@ def pagina_pre_alerta(df):
         aviso("Não há processos disponíveis para os filtros selecionados.", "atencao")
         return
 
-    abas = st.tabs([c.get("aba") or c["titulo"].replace("Controle de " "") for c in MEDICOES])
+    abas = st.tabs([c["aba"] for c in MEDICOES])
     for indice, (aba, config) in enumerate(zip(abas, MEDICOES)):
         with aba:
             _exibir_bloco(df, config, indice)

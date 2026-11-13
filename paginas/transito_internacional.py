@@ -432,74 +432,8 @@ def bloco_medicao(df, configuracao):
         )
 
     # --------------------------------------------------------
-    # Resumo operacional
-    # --------------------------------------------------------
-
-    secao(
-        "Resumo operacional",
-        "Visão consolidada dos tempos e da situação da etapa.",
-    )
-
-    r1, r2, r3, r4 = st.columns(4)
-
-    with r1:
-        with st.container(border=True):
-            st.metric(
-                "Tempo médio",
-                f"{resumo['media']:.1f} dias úteis",
-            )
-
-    with r2:
-        with st.container(border=True):
-            st.metric(
-                "Tempo mediano",
-                f"{resumo['mediana']:.1f} dias úteis",
-            )
-
-    with r3:
-        with st.container(border=True):
-            st.metric(
-                "Maior duração",
-                f"{resumo['maior']:.0f} dias úteis",
-            )
-
-    with r4:
-        with st.container(border=True):
-            taxa = (
-                resumo["concluidos"] / resumo["total"]
-                if resumo["total"]
-                else 0
-            )
-
-            st.metric(
-                "Taxa de conclusão",
-                f"{taxa:.1%}",
-            )
-
-            st.progress(taxa)
-
-    # --------------------------------------------------------
-    # Orientação sobre as regras de prazo
-    # --------------------------------------------------------
-
-    aviso(
-        "Os dias apresentados consideram apenas dias úteis, "
-        "excluindo sábados, domingos e feriados nacionais "
-        "brasileiros. Os limites de prazo para os faróis desta "
-        "etapa ainda precisam ser definidos. Por esse motivo, "
-        "os registros com data inicial válida aparecem como "
-        "'Revisar regra', sem classificação automática de atraso.",
-        tipo="info",
-    )
-
-    # --------------------------------------------------------
     # Tabela detalhada padrão
     # --------------------------------------------------------
-
-    secao(
-        "Detalhamento dos processos",
-        "Consulte os registros, ordene os resultados e exporte os dados.",
-    )
 
     tabela_detalhada(
         filtrado,

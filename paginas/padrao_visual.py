@@ -241,11 +241,101 @@ hr {border-color: __borda__ !important; opacity: .8;}
 [data-baseweb="tab-border"] {background: __borda__;}
 
 /* Tabela interativa: moldura, controles e navegação */
-/* Barra de ferramentas da tabela */
+/* Busca e selectboxes do detalhamento */
 .stApp [class*="st-key-busca_tabela_"] input {min-height: 42px; border-radius: 10px !important;}
+/* O tema do Streamlit/BaseWeb pode aplicar fundo inline nos selectboxes.
+   Aplicamos a paleta no wrapper, no controle interno e em todos os descendentes. */
+.stApp [class*="st-key-ordem_"],
+.stApp [class*="st-key-tamanho_tabela_"] {color: __texto__ !important;}
+.stApp [class*="st-key-ordem_"] [data-testid="stSelectbox"],
+.stApp [class*="st-key-tamanho_tabela_"] [data-testid="stSelectbox"],
 .stApp [class*="st-key-ordem_"] [data-baseweb="select"],
-.stApp [class*="st-key-tamanho_tabela_"] [data-baseweb="select"],
-.stApp [class*="st-key-pagina_tabela_"] [data-baseweb="select"] {border-radius: 10px !important;}
+.stApp [class*="st-key-tamanho_tabela_"] [data-baseweb="select"] {
+  background: transparent !important; background-color: transparent !important;
+  color: __texto__ !important; border-radius: 10px !important;
+}
+.stApp [class*="st-key-ordem_"] [data-baseweb="select"] > div,
+.stApp [class*="st-key-tamanho_tabela_"] [data-baseweb="select"] > div,
+.stApp [class*="st-key-ordem_"] [data-baseweb="select"] [role="combobox"],
+.stApp [class*="st-key-tamanho_tabela_"] [data-baseweb="select"] [role="combobox"] {
+  background: __input_bg__ !important; background-color: __input_bg__ !important;
+  border: 1px solid __input_borda__ !important; border-radius: 10px !important;
+  color: __texto__ !important; box-shadow: none !important;
+  opacity: 1 !important;
+}
+.stApp [class*="st-key-ordem_"] [data-baseweb="select"] *,
+.stApp [class*="st-key-tamanho_tabela_"] [data-baseweb="select"] * {
+  color: __texto__ !important; -webkit-text-fill-color: __texto__ !important;
+}
+.stApp [class*="st-key-ordem_"] [data-baseweb="select"] svg,
+.stApp [class*="st-key-tamanho_tabela_"] [data-baseweb="select"] svg {
+  fill: __texto3__ !important; color: __texto3__ !important;
+}
+.stApp [class*="st-key-ordem_"] [data-baseweb="select"]:focus-within > div,
+.stApp [class*="st-key-tamanho_tabela_"] [data-baseweb="select"]:focus-within > div {
+  border-color: __acento__ !important; box-shadow: 0 0 0 2px __acento_suave__ !important;
+}
+/* Acabamento final dos selects da tabela: replica o campo Busca rápida.
+   O Select do BaseWeb possui camadas internas com fundo próprio; por isso
+   o fundo é aplicado também aos elementos internos do controle fechado. */
+.stApp [class*="st-key-ordem_"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+.stApp [class*="st-key-tamanho_tabela_"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+.stApp [class*="st-key-ordem_"] [data-testid="stSelectbox"] [role="combobox"],
+.stApp [class*="st-key-tamanho_tabela_"] [data-testid="stSelectbox"] [role="combobox"] {
+  min-height: 42px !important;
+  height: 42px !important;
+  box-sizing: border-box !important;
+  background: __input_bg__ !important;
+  background-color: __input_bg__ !important;
+  border: 1px solid __input_borda__ !important;
+  border-radius: 8px !important;
+  color: __texto__ !important;
+  box-shadow: none !important;
+}
+.stApp [class*="st-key-ordem_"] [data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
+.stApp [class*="st-key-tamanho_tabela_"] [data-testid="stSelectbox"] [data-baseweb="select"] > div > div {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: __texto__ !important;
+}
+.stApp [class*="st-key-ordem_"] [data-testid="stSelectbox"] [data-baseweb="select"] span,
+.stApp [class*="st-key-tamanho_tabela_"] [data-testid="stSelectbox"] [data-baseweb="select"] span,
+.stApp [class*="st-key-ordem_"] [data-testid="stSelectbox"] [data-baseweb="select"] div,
+.stApp [class*="st-key-tamanho_tabela_"] [data-testid="stSelectbox"] [data-baseweb="select"] div {
+  -webkit-text-fill-color: __texto__ !important;
+}
+.stApp [class*="st-key-ordem_"] [data-testid="stSelectbox"] [data-baseweb="select"] svg,
+.stApp [class*="st-key-tamanho_tabela_"] [data-testid="stSelectbox"] [data-baseweb="select"] svg {
+  fill: __texto3__ !important;
+  color: __texto3__ !important;
+}
+.stApp [class*="st-key-ordem_"] [data-testid="stSelectbox"] [data-baseweb="select"]:focus-within > div,
+.stApp [class*="st-key-tamanho_tabela_"] [data-testid="stSelectbox"] [data-baseweb="select"]:focus-within > div {
+  border-color: __acento__ !important;
+  box-shadow: 0 0 0 2px __acento_suave__ !important;
+}
+
+/* Menu de opções: BaseWeb o renderiza em um portal fora do contêiner do widget. */
+[data-baseweb="popover"],
+[data-baseweb="popover"] > div,
+[data-baseweb="popover"] [data-baseweb="menu"],
+[data-baseweb="popover"] [role="listbox"] {
+  background: __cartao__ !important; background-color: __cartao__ !important;
+  border-color: __borda__ !important; color: __texto__ !important;
+}
+[data-baseweb="popover"] [role="option"],
+[data-baseweb="popover"] [role="option"] * {
+  background: __cartao__ !important; color: __texto2__ !important;
+  -webkit-text-fill-color: __texto2__ !important;
+}
+[data-baseweb="popover"] [role="option"]:hover,
+[data-baseweb="popover"] [role="option"][aria-selected="true"] {
+  background: __hover__ !important; color: __texto__ !important;
+}
+[data-baseweb="popover"] [role="option"]:hover *,
+[data-baseweb="popover"] [role="option"][aria-selected="true"] * {
+  color: __texto__ !important; -webkit-text-fill-color: __texto__ !important;
+}
 /* Tabela analítica própria: aparência uniforme nos temas claro e escuro */
 .data-table-card {background: __cartao__; border: 1px solid __borda__; border-radius: 15px; overflow: hidden; box-shadow: __sombra__; margin: 3px 0 12px;}
 .data-table-scroll {width: 100%; max-height: 590px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: __borda__ transparent;}
@@ -883,17 +973,14 @@ def tabela_detalhada(dados, inicio, fim, chave, nome_arquivo):
     total = len(filtrado)
     paginas = max(1, (total + tamanho - 1) // tamanho)
     chave_pagina = f"pagina_tabela_{chave}"
-    if chave_pagina not in st.session_state or int(st.session_state[chave_pagina]) > paginas:
+    if chave_pagina not in st.session_state:
         st.session_state[chave_pagina] = 1
-    c_info, c_pagina = st.columns([3, 1])
-    with c_info:
-        st.caption(f"**{total:,}** processo(s) encontrado(s) · {len(dados):,} após os filtros da página")
-    with c_pagina:
-        pagina = st.selectbox("Página", list(range(1, paginas + 1)), key=chave_pagina,
-                              format_func=lambda n: f"{n} de {paginas}")
+    # Mantém a página válida quando busca, filtros ou tamanho da página mudam.
+    pagina_atual = max(1, min(int(st.session_state[chave_pagina]), paginas))
+    st.session_state[chave_pagina] = pagina_atual
+    st.caption(f"**{total:,}** processo(s) encontrado(s) · {len(dados):,} após os filtros da página")
 
-    inicio_linha = (pagina - 1) * tamanho
-    pagina_df = filtrado.iloc[inicio_linha:inicio_linha + tamanho][visiveis].copy()
+    inicio_linha = (pagina_atual - 1) * tamanho
     # A grade é HTML próprio para manter o mesmo acabamento da prévia em qualquer versão do Streamlit.
     pagina_df = filtrado.iloc[inicio_linha:inicio_linha + tamanho][visiveis].copy()
     if "Dias" in pagina_df.columns:
@@ -902,6 +989,25 @@ def tabela_detalhada(dados, inicio, fim, chave, nome_arquivo):
     else:
         dias_max = 1.0
     st.markdown(tabela_html(pagina_df, visiveis, inicio, fim, dias_max), unsafe_allow_html=True)
+
+    # Paginação compacta abaixo da tabela: somente voltar, posição atual e avançar.
+    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+    espaco_esq, voltar_col, indicador_col, avancar_col, espaco_dir = st.columns([1, 0.55, 0.8, 0.55, 1])
+    with voltar_col:
+        if st.button("‹", key=f"pagina_anterior_{chave}", disabled=pagina_atual <= 1,
+                     use_container_width=True, help="Página anterior"):
+            st.session_state[chave_pagina] = pagina_atual - 1
+            st.rerun()
+    with indicador_col:
+        st.markdown(
+            f"<div style='height:40px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:750;color:inherit;font-variant-numeric:tabular-nums;'>{pagina_atual} / {paginas}</div>",
+            unsafe_allow_html=True,
+        )
+    with avancar_col:
+        if st.button("›", key=f"proxima_pagina_{chave}", disabled=pagina_atual >= paginas,
+                     use_container_width=True, help="Próxima página"):
+            st.session_state[chave_pagina] = pagina_atual + 1
+            st.rerun()
 
     csv = filtrado.drop(columns=["_data_calculo"], errors="ignore").to_csv(
         index=False, sep=";", encoding="utf-8-sig"

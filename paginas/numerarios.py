@@ -5,15 +5,18 @@ from datetime import date, timedelta
 import pandas as pd
 import streamlit as st
 
-from paginas.padrao_visual import (
-    cabecalho,
-    secao,
-    cartao,
-    aviso,
-    faixa_farol,
-    CORES_FAROL,
-    PLOTLY_CONFIG,
-)
+try:
+    from padrao_visual import (
+        cabecalho, secao, cartao, aviso, faixa_farol, CORES_FAROL,
+        ORDEM_FAROL, grafico_farol, grafico_duracao, grafico_evolucao,
+        tabela_detalhada, barra_filtros, titulo_card, tema_ativo, PLOTLY_CONFIG,
+    )
+except ModuleNotFoundError:
+    from paginas.padrao_visual import (
+        cabecalho, secao, cartao, aviso, faixa_farol, CORES_FAROL,
+        ORDEM_FAROL, grafico_farol, grafico_duracao, grafico_evolucao,
+        tabela_detalhada, barra_filtros, titulo_card, tema_ativo, PLOTLY_CONFIG,
+    )
 
 try:
     import plotly.express as px
@@ -467,175 +470,149 @@ def _controle_pagamento(base):
 
 
 # ============================================================
+# APRESENTAÇÃO PADRONIZADA DOS CONTROLES
+# ============================================================
+
+def _normalizar_para_padrao(dados, coluna_inicio, coluna_fim):
+    """Adapta os nomes internos do Numerários aos componentes compartilhados."""
+    resultado = dados.copy()
+    resultado[coluna_inicio] = pd.to_datetime(resultado[coluna_inicio], errors="coerce")
+    if coluna_fim not in resultado.columns:
+        resultado[coluna_fim] = pd.NaT
+    resultado[coluna_fim] = pd.to_datetime(resultado[coluna_fim], errors="coerce")
+    resultado["Dias"] = pd.to_numeric(resultado["Dias"], errors="coerce")
+    resultado["Farol da etapa"] = resultado["Farol"].fillna("SEM DATA")
+    resultado["Situação da etapa"] = resultado[coluna_fim].apply(
+        lambda data: "Concluída" if pd.notna(data) else "Em andamento"
+    )
+    return resultado
+
+
+def _exibir_controle(dados, chave, titulo, descricao, coluna_inicio, coluna_fim,
+                     arquivo, colunas_tabela, observacao=None):
+    dados = _normalizar_para_padrao(dados, coluna_inicio, coluna_fim)
+
+    titulo_card(titulo, descricao)
+    if observacao:
+        aviso(observacao, tipo="info")
+
+    filtrado = barra_filtros(dados, coluna_inicio, chave)
+    total = len(filtrado)
+    if total == 0:
+        aviso("Nenhum processo encontrado com os filtros selecionados.", tipo="info")
+        return
+
+    # Indicadores: total + cinco categorias de farol.
+    contagem = filtrado["Farol da etapa"].value_counts().reindex(
+        ["DENTRO DO PRAZO", "ATENÇÃO", "ALERTA", "ATRASO", "SEM DATA"],
+        fill_value=0,
+    )
+    secao("Indicadores do controle", "Quantidade e participação dos processos em cada faixa.")
+    c_total, c1, c2, c3 = st.columns(4)
+    with c_total:
+        cartao("Processos", total, "Total após os filtros", "#24476B", chave=chave)
+    for coluna, farol in zip((c1, c2, c3), ("DENTRO DO PRAZO", "ATENÇÃO", "ALERTA")):
+        qtd = int(contagem[farol])
+        with coluna:
+            cartao(farol.title(), qtd, f"{qtd / total:.1%} dos processos", CORES_FAROL[farol], farol=farol, chave=chave)
+    c4, c5 = st.columns(2)
+    for coluna, farol in zip((c4, c5), ("ATRASO", "SEM DATA")):
+        qtd = int(contagem[farol])
+        with coluna:
+            cartao(farol.title(), qtd, f"{qtd / total:.1%} dos processos", CORES_FAROL[farol], farol=farol, chave=chave)
+
+    faixa_farol(contagem.to_dict(), total=total)
+
+    secao("Análise dos processos", "Distribuição do farol e duração do controle.")
+    g1, g2 = st.columns([1, 1.35])
+    with g1:
+        with st.container(border=True):
+            titulo_card("Distribuição por farol", "Participação dos processos em cada classificação.")
+            grafico_farol(filtrado, chave=chave)
+    with g2:
+        with st.container(border=True):
+            titulo_card("Duração do controle", "Dias corridos entre o início e a conclusão ou a data atual.")
+            grafico_duracao(filtrado, chave=chave, marcos=((1, "1 dia"), (2, "2 dias"), (3, "3 dias")), usar_faixas=False)
+
+    with st.container(border=True):
+        titulo_card("Evolução dos processos", "Volume por mês de início do controle.")
+        grafico_evolucao(filtrado, coluna_inicio=coluna_inicio, chave=chave)
+
+    tabela_detalhada(filtrado, coluna_inicio, coluna_fim, chave, arquivo)
+
+
+# ============================================================
 # PÁGINA PRINCIPAL
 # ============================================================
 
 def pagina_numerarios(df):
-
     cabecalho(
         "Controle de Numerários",
-        "Acompanhamento das solicitações e pagamentos de numerários.",
+        "Acompanhamento das solicitações pré-adm, solicitações ao cliente e pagamentos de numerários.",
         chave="numerarios",
     )
 
     if df is None or df.empty:
-        aviso(
-            "A base de dados está vazia. Verifique a importação da planilha.",
-            "atencao",
-        )
+        aviso("A base de dados está vazia. Verifique a importação da planilha.", tipo="info")
         return
 
     base = _preparar_base(df)
 
-    st.caption(
-        "Os campos inexistentes na planilha de demonstração são "
-        "simulados nesta página. Eles não alteram a base original."
+    aviso(
+        "Atenção: quando a planilha não possui uma data necessária ao controle, "
+        "a página utiliza uma data sintética identificada para demonstração. "
+        "Essas datas não alteram a base original.",
+        tipo="info",
     )
 
     aba_pre, aba_adm, aba_pag = st.tabs([
-        "Controle de Solicitação de Numerário — Pré-adm",
-        "Controle de Solicitação de Numerário — Adm / Cliente",
-        "Controle de Controle de Pagamento",
+        "Solicitação Pré-adm",
+        "Solicitação Adm / Cliente",
+        "Pagamento de Numerário",
     ])
 
-    # --------------------------------------------------------
-    # ABA 1 — PRÉ-ADM
-    # --------------------------------------------------------
-
     with aba_pre:
-
         dados = _controle_pre_adm(base)
-
-        secao(
-            "Controle de Solicitação de Numerário (pré-adm)",
+        _exibir_controle(
+            dados, "numerarios_pre_adm",
+            "Controle de Solicitação de Numerário — Pré-adm",
             "Acompanhamento entre a instrução do despacho e o envio do numerário.",
+            "Data Instrução Despacho", "Data Envio Numerário",
+            "numerarios_pre_adm.csv",
+            ["Status", "Ref.Cliente", "Nº Processo", "Responsável", "Planta", "Categoria",
+             "Exportador", "Modal", "Solicita Numerário", "Data Instrução Despacho",
+             "Data Envio Numerário", "Dias", "Farol da etapa", "Situação da etapa"],
+            "As datas de instrução e envio são simuladas quando os campos correspondentes não existem na planilha.",
         )
-
-        aviso(
-            "Dados de demonstração: as datas de instrução e envio "
-            "são simuladas quando não existem na planilha.",
-        )
-
-        st.markdown("**Regra de medição**")
-        st.caption(
-            "0 a 1 dia: Dentro do Prazo | 2 dias: Atenção | "
-            "3 dias: Alerta | Acima de 3 dias: Atraso."
-        )
-
-        filtrado = _filtros(dados, "pre_adm")
-
-        _indicadores_farol(filtrado, "pre_adm")
-        _grafico_farol(filtrado, "pre_adm")
-
-        _tabela(
-            filtrado,
-            [
-                "Status",
-                "Ref.Cliente",
-                "Nº Processo",
-                "Responsável",
-                "Categoria",
-                "Exportador",
-                "Modal",
-                "Solicita Numerário",
-                "Data Instrução Despacho",
-                "Data Envio Numerário",
-                "Dias",
-                "Farol",
-            ],
-            "numerarios_pre_adm",
-        )
-
-    # --------------------------------------------------------
-    # ABA 2 — ADM / CLIENTE
-    # --------------------------------------------------------
 
     with aba_adm:
-
         dados = _controle_adm_cliente(base)
-
-        secao(
-            "Controle de Solicitação de Numerário (adm - cliente)",
-            "Acompanhamento do envio da solicitação ao cliente.",
+        dados["_Data Fim Adm Cliente"] = pd.NaT
+        _exibir_controle(
+            dados, "numerarios_adm_cliente",
+            "Controle de Solicitação de Numerário — Adm / Cliente",
+            "Acompanhamento do tempo desde o envio da solicitação ao cliente.",
+            "Data Envio Numerário", "_Data Fim Adm Cliente",
+            "numerarios_adm_cliente.csv",
+            ["Status", "Ref.Cliente", "Nº Processo", "Responsável", "Planta", "Categoria",
+             "Exportador", "Modal", "Data Envio Numerário", "Dias", "Farol da etapa", "Situação da etapa"],
+            "A data de envio é simulada para demonstração quando não existe um campo equivalente na planilha. Esta etapa permanece em andamento até existir uma data de conclusão específica.",
         )
-
-        aviso(
-            "A data de envio é simulada para demonstração quando "
-            "não existe um campo equivalente na planilha.",
-        )
-
-        st.markdown("**Regra de medição**")
-        st.caption(
-            "0 a 1 dia: Dentro do Prazo | 2 dias: Atenção | "
-            "3 dias: Alerta | Acima de 3 dias: Atraso."
-        )
-
-        filtrado = _filtros(dados, "adm_cliente")
-
-        _indicadores_farol(filtrado, "adm_cliente")
-        _grafico_farol(filtrado, "adm_cliente")
-
-        _tabela(
-            filtrado,
-            [
-                "Status",
-                "Ref.Cliente",
-                "Nº Processo",
-                "Responsável",
-                "Categoria",
-                "Exportador",
-                "Modal",
-                "Data Envio Numerário",
-            ],
-            "numerarios_adm_cliente",
-        )
-
-    # --------------------------------------------------------
-    # ABA 3 — PAGAMENTO
-    # --------------------------------------------------------
 
     with aba_pag:
-
         dados = _controle_pagamento(base)
-
-        secao(
-            "Controle de Pagamento Numerário",
-            "Acompanhamento entre a solicitação e o recebimento do numerário.",
-        )
-
-        aviso(
-            "A coluna Data Recebimento Numerário da planilha original "
-            "foi preservada. Ela não foi considerada automaticamente "
-            "equivalente a Data Recebimento Numerário Cliente.",
-        )
-
-        st.markdown("**Regra de medição**")
-        st.caption(
-            "0 a 1 dia: Dentro do Prazo | 2 dias: Atenção | "
-            "3 dias: Alerta | Acima de 3 dias: Atraso."
-        )
-
-        filtrado = _filtros(dados, "pagamento")
-
-        _indicadores_farol(filtrado, "pagamento")
-        _grafico_farol(filtrado, "pagamento")
-
-        _tabela(
-            filtrado,
-            [
-                "Status",
-                "Ref.Cliente",
-                "Ref.Pibernat",
-                "Nº Processo",
-                "Responsável",
-                "Categoria",
-                "Exportador",
-                "Modal",
-                "Data Solicitação Numerário Cliente",
-                "Data Recebimento Numerário Cliente",
-                "Dias",
-                "Farol",
-                "Icon",
-            ],
-            "numerarios_pagamento",
+        if "_Data Solicitação Simulada" in dados.columns:
+            inicio_pagamento = "_Data Solicitação Simulada"
+        else:
+            inicio_pagamento = "Data Solicitação Numerário Cliente"
+        _exibir_controle(
+            dados, "numerarios_pagamento",
+            "Controle de Pagamento de Numerário",
+            "Acompanhamento entre a solicitação e o recebimento do numerário pelo cliente.",
+            inicio_pagamento, "Data Recebimento Numerário Cliente",
+            "numerarios_pagamento.csv",
+            ["Status", "Ref.Cliente", "Ref.Pibernat", "Nº Processo", "Responsável", "Planta",
+             "Categoria", "Exportador", "Modal", "Data Solicitação Numerário Cliente",
+             "Data Recebimento Numerário Cliente", "Dias", "Farol da etapa", "Situação da etapa"],
+            "A coluna Data Recebimento Numerário da planilha original foi preservada e não foi considerada automaticamente equivalente a Data Recebimento Numerário Cliente.",
         )
